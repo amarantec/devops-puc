@@ -138,18 +138,19 @@ defmodule KgkmWeb.ChatLive.Index do
         message_params
       )
 
-    {:noreply, socket
-    |> assign(form: to_form(changeset, action: :validate))}
+    {:noreply,
+     socket
+     |> assign(form: to_form(changeset, action: :validate))}
   end
 
   @impl true
   def handle_event("save", %{"message" => message_params}, socket) do
     scope = socket.assigns.current_scope
-		chat_id = socket.assigns.active_chat.id
-		
-		# Adiciona o chat_id garantido ao payload
-		message_params = Map.put(message_params, "chat_id", chat_id)
-		
+    chat_id = socket.assigns.active_chat.id
+
+    # Adiciona o chat_id garantido ao payload
+    message_params = Map.put(message_params, "chat_id", chat_id)
+
     case Messages.create_message(scope, message_params) do
       {:ok, _message} ->
         # Limpa o formulario mantendo o chat_id ativo
