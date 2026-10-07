@@ -6,6 +6,8 @@ defmodule Kgkm.Accounts.User do
   @foreign_key_type :binary_id
   schema "users" do
     field :email, :string
+    field :username, :string
+    field :tag, :string
     field :password, :string, virtual: true, redact: true
     field :role, Ecto.Enum, values: [:admin, :user]
     field :hashed_password, :string, redact: true
@@ -131,5 +133,49 @@ defmodule Kgkm.Accounts.User do
   def valid_password?(_, _) do
     Bcrypt.no_user_verify()
     false
+  end
+
+  @doc """
+  A user changeset for registration.
+  """
+  def registration_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:email, :username])
+    |> validate_email(opts)
+    |> validate_username()
+    |> ensure_tag()
+  end
+
+  def username_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:username])
+    |> validate_username()
+  end
+
+  defp validate_username(changeset) do
+    changeset
+    |> validate_required([:username])
+    |> validate_length(:username, min: 3, max: 20)
+    |> validate_format(:username, ~r/^[a-zA-Z0-9_]+$/,
+      message: "can only contain letters, numbers, and underscores"
+    )
+    |> unique_constraint([:username, :tag], name: :users_username_tag_index)
+  end
+
+  # Se o usuário não possui tag, gera uma tag aleatória de 4 dígitos (0001 a 9999)
+  defp ensure_tag(changeset) do
+    if get_field(changeset, :tag) do
+      changeset
+    else
+      tag = generate_tag()
+      put_change(changeset, :tag, tag)
+    end
+  end
+
+  defp generate_tag do
+    # :rand.uniform(10000) - 1 gera números de 0 a 9999
+    (:rand.uniform(10000) - 1)
+    |> Integer.to_string()
+    |> String.pad_leading(4, "0")
   end
 end
