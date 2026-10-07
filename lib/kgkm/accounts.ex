@@ -294,4 +294,25 @@ defmodule Kgkm.Accounts do
       end
     end)
   end
+
+  @doc """
+  Busca por um usuário através de Username e Tag
+  ex: username = "alice", tag="2002")
+  """
+  def get_user_by_username_and_tag(username, tag) do
+    Repo.get_by(User, username: username, tag: tag)
+  end
+
+  @doc """
+  Busca aproximada por username (para autocomplete na searchbar)
+  """
+  def search_users_by_username(query_string, current_user_id) do
+    query_string = "%#{query_string}%"
+
+    from(u in User,
+      where: u.id != ^current_user_id and ilike(u.username, ^query_string),
+      limit: 5
+    )
+    |> Repo.all()
+  end
 end
