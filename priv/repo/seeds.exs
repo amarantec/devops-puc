@@ -11,15 +11,15 @@
 # and so on) as they will fail if something goes wrong.
 alias Kgkm.Repo
 alias Kgkm.Accounts.User
-alias Kgkm.Chats.Chat
+alias Kgkm.Chats.{Chat, ChatMember}
 alias Kgkm.Messages.Message
 
-# Limpa o banco para não dar conflito com os dados antigos sem username
 Repo.delete_all(Message)
+Repo.delete_all(ChatMember)
 Repo.delete_all(Chat)
 Repo.delete_all(User)
 
-# 1. Usuário de teste principal
+# 1. Usuários de teste
 user1 =
   Repo.insert!(%User{
     email: "teste@kgkm.com",
@@ -28,7 +28,6 @@ user1 =
     role: :user
   })
 
-# 2. Segundo usuário para testarmos a busca e início de conversa
 user2 =
   Repo.insert!(%User{
     email: "alice@kgkm.com",
@@ -37,26 +36,29 @@ user2 =
     role: :user
   })
 
-# 3. Cria uma conversa entre eles
+# 2. Chat Direto
 chat =
   Repo.insert!(%Chat{
-    title: "DM: dev_master e alice",
+    title: nil,
     type: :direct,
     is_muted?: false
   })
 
+# Vincula ambos como membros
+Repo.insert!(%ChatMember{chat_id: chat.id, user_id: user1.id})
+Repo.insert!(%ChatMember{chat_id: chat.id, user_id: user2.id})
+
+# 3. Mensagens
 Repo.insert!(%Message{
-  content: "Fala Alice! Testando o chat por tag.",
+  content: "Fala Alice! Testando o chat com busca de usuários.",
   chat_id: chat.id,
   user_id: user1.id
 })
 
 Repo.insert!(%Message{
-  content: "Oi! Ficou muito legal o sistema de tag #2002!",
+  content: "Oi! Agora posso te achar digitando alice#2002!",
   chat_id: chat.id,
   user_id: user2.id
 })
 
-IO.puts("✅ Seeds executados com sucesso!")
-IO.puts("User 1: #{user1.username}##{user1.tag}")
-IO.puts("User 2: #{user2.username}##{user2.tag}")
+IO.puts("✅ Seeds atualizados com sucesso!")
