@@ -55,18 +55,22 @@ defmodule Kgkm.Chats do
   @doc """
   Cria um grupo com um título e uma lista de membros.
   """
-  def create_group_chat(%Scope{} = scope, title, member_ids) do
+  def create_group_chat(%Scope{} = scope, title, member_ids) when is_list(member_ids) do
     creator_id = scope.user.id
+    # Garante que o criador do grupo está incluído e remove duplicatas
     all_member_ids = Enum.uniq([creator_id | member_ids])
 
     Repo.transact(fn ->
-      with {:ok, chat} <- Repo.insert(%Chat{type: :group, title: title}) do
-        Enum.each(all_member_ids, fn user_id ->
-          Repo.insert!(%ChatMember{chat_id: chat.id, user_id: user_id})
-        end)
-
+      with {:ok, chat} <- Repo.insert(%Chat{type: :group, title: title}),
+           :ok <- insert_members(chat.id, all_member_ids) do
         {:ok, chat}
       end
+    end)
+  end
+
+  defp insert_members(chat_id, user_ids) do
+    Enum.each(user_ids, fn user_id ->
+      Repo.insert!(%ChatMember{chat_id: chat_id, user_id: user_id})
     end)
   end
 
