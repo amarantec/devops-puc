@@ -1,7 +1,7 @@
 defmodule KgkmWeb.ChatLive.Index do
-  alias Kgkm.Accounts
   use KgkmWeb, :live_view
 
+  alias Kgkm.Accounts
   alias Kgkm.Chats
   alias Kgkm.Messages
   alias Kgkm.Messages.Message
@@ -11,15 +11,20 @@ defmodule KgkmWeb.ChatLive.Index do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
       <div class="flex h-[calc(100vh-8rem)] border rounded-lg overflow-hidden">
-        <!-- Sidebar: Lista de Conversa -->
+        <!-- Sidebar Principal -->
         <aside class="w-1/3 border-r bg-gray-50 flex flex-col">
-          <!-- Cabeçalho do Usuário e Search Bar -->
-          <div class="p-4 border-b bg-white">
-            <div class="text-sm font-semibold text-gray-600 mb-2">
-              Meu Perfil:
-              <span class="text-blue-600">
-                {@current_scope.user.username}#{@current_scope.user.tag}
-              </span>
+          <!-- Cabeçalho do Usuário, Botão Novo Grupo e Search Bar -->
+          <div class="p-4 border-b bg-white space-y-3">
+            <div class="flex justify-between items-center">
+              <div class="text-sm font-semibold text-gray-600">
+                <span class="text-blue-600">
+                  {@current_scope.user.username}#{@current_scope.user.tag}
+                </span>
+              </div>
+              <!-- Botão para abrir o modal de grupo -->
+              <.button phx-click="open_group_modal" variant="primary" class="text-xs">
+                + Novo Grupo
+              </.button>
             </div>
             
     <!-- Campo de Busca de Usuários -->
@@ -34,7 +39,8 @@ defmodule KgkmWeb.ChatLive.Index do
               />
             </form>
           </div>
-          <!-- Resultados da Busca (se houver algo digitado) -->
+          
+    <!-- Resultados da Busca (se houver algo digitado) -->
           <%= if @search_query != "" do %>
             <div class="p-2 bg-blue-50 border-b">
               <div class="text-xs font-bold text-gray-500 mb-2 px-2 uppercase">
@@ -70,7 +76,12 @@ defmodule KgkmWeb.ChatLive.Index do
                 patch={~p"/chats/#{chat.id}"}
                 class={"block p-3 rounded-lg transition #{if @active_chat && @active_chat.id == chat.id, do: "bg-blue-100 text-blue-800 font-semibold", else: "hover:bg-gray-200"}"}
               >
-                {chat.title || "Conversa em Grupo / Direta"}
+                <div class="flex justify-between items-center">
+                  <span>{chat.title || "Conversa Direta"}</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-600">
+                    {if chat.type == :group, do: "GRUPO", else: "DM"}
+                  </span>
+                </div>
               </.link>
             </div>
           </div>
@@ -128,6 +139,96 @@ defmodule KgkmWeb.ChatLive.Index do
           <% end %>
         </main>
       </div>
+      
+    <!-- MODAL FUNCIONAL DE CRIAÇÃO DE GRUPO -->
+      <%= if @show_group_modal? do %>
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div class="bg-white p-6 rounded-lg w-full max-w-md space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+              <h3 class="text-lg font-bold">Criar Novo Grupo</h3>
+              <button phx-click="close_group_modal" class="text-gray-500 font-bold">✕</button>
+            </div>
+
+            <.form for={%{}} phx-submit="create_group" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium mb-1">Nome do Grupo</label>
+                <input
+                  type="text"
+                  name="group_title"
+                  placeholder="ex: Projeto Elixir"
+                  required
+                  class="w-full text-sm rounded border-gray-300"
+                />
+              </div>
+              
+    <!-- Busca e Seleção de Membros -->
+              <div>
+                <label class="block text-sm font-medium mb-1">Buscar Membro por Tag/Username</label>
+                <input
+                  type="text"
+                  phx-keyup="search_group_member"
+                  name="member_query"
+                  placeholder="ex: alice#2002"
+                  class="w-full text-sm rounded border-gray-300 mb-2"
+                  autocomplete="off"
+                />
+                
+    <!-- Resultados de Busca de Membros -->
+                <%= if @group_search_results != [] do %>
+                  <div class="border rounded p-2 bg-gray-50 max-h-32 overflow-y-auto mb-2 space-y-1">
+                    <div
+                      :for={user <- @group_search_results}
+                      class="flex justify-between items-center text-xs"
+                    >
+                      <span>{user.username}#{user.tag}</span>
+                      <.button
+                        type="button"
+                        phx-click="add_member_to_group"
+                        phx-value-user-id={user.id}
+                        phx-value-username={user.username}
+                        class="text-[10px] py-0.5 px-2"
+                      >
+                        <.icon name="hero-plus" /> Adicionar
+                      </.button>
+                    </div>
+                  </div>
+                <% end %>
+                
+    <!-- Membros Selecionados -->
+                <div class="text-xs font-semibold text-gray-500 mb-1">Membros Selecionados:</div>
+                <div class="flex flex-wrap gap-1 border p-2 rounded min-h-[40px]">
+                  <span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded">
+                    Você (criador)
+                  </span>
+                  <span
+                    :for={member <- @selected_group_members}
+                    class="bg-gray-200 text-gray-800 text-xs px-2 py-0.5 rounded flex items-center gap-1"
+                  >
+                    {member.username}
+                    <button
+                      type="button"
+                      phx-click="remove_member_from_group"
+                      phx-value-user-id={member.id}
+                      class="text-red-500 font-bold"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex justify-end gap-2 pt-2 border-t">
+                <.button type="button" phx-click="close_group_modal" class="bg-gray-300 text-black">
+                  Cancelar
+                </.button>
+                <.button type="submit" variant="primary">
+                  Criar Grupo
+                </.button>
+              </div>
+            </.form>
+          </div>
+        </div>
+      <% end %>
     </Layouts.app>
     """
   end
@@ -142,6 +243,10 @@ defmodule KgkmWeb.ChatLive.Index do
      |> assign(:active_chat, nil)
      |> assign(:search_query, "")
      |> assign(:search_results, [])
+     # Estados para o Modal de Grupo
+     |> assign(:show_group_modal?, false)
+     |> assign(:group_search_results, [])
+     |> assign(:selected_group_members, [])
      |> assign_message_form(%Message{})}
   end
 
@@ -154,12 +259,10 @@ defmodule KgkmWeb.ChatLive.Index do
     scope = socket.assigns.current_scope
 
     if connected?(socket) do
-      # Cancela assinatura anterior se houver e assina novo chat
       if active_chat = socket.assigns.active_chat do
         Phoenix.PubSub.unsubscribe(Kgkm.PubSub, "chat:#{active_chat.id}:messages")
       end
 
-      # Inscreve no topico do novo chat
       Messages.subscribe_chat_messages(chat_id)
     end
 
@@ -178,16 +281,27 @@ defmodule KgkmWeb.ChatLive.Index do
     |> stream(:messages, [], reset: true)
   end
 
-  # --- EVENTOS DE BUSCA E INICIO DE CHAT ---
+  # --- HANDLERS DO MODAL DE GRUPO ---
+
   @impl true
-  def handle_event("search_user", %{"query" => query}, socket) do
+  def handle_event("open_group_modal", _params, socket) do
+    {:noreply,
+     assign(socket, show_group_modal?: true, group_search_results: [], selected_group_members: [])}
+  end
+
+  @impl true
+  def handle_event("close_group_modal", _params, socket) do
+    {:noreply, assign(socket, show_group_modal?: false)}
+  end
+
+  @impl true
+  def handle_event("search_group_member", %{"value" => query}, socket) do
     query = String.trim(query)
 
     results =
       if query == "" do
         []
       else
-        # Se contiver "#", faz busca exata por username#tag
         if String.contains?(query, "#") do
           case String.split(query, "#") do
             [username, tag] ->
@@ -200,7 +314,75 @@ defmodule KgkmWeb.ChatLive.Index do
               []
           end
         else
-          # Se não, busca aproximada por username
+          Accounts.search_users_by_username(query, socket.assigns.current_scope.user.id)
+        end
+      end
+
+    {:noreply, assign(socket, group_search_results: results)}
+  end
+
+  @impl true
+  def handle_event("add_member_to_group", %{"user-id" => user_id, "username" => username}, socket) do
+    selected = socket.assigns.selected_group_members
+
+    updated_members =
+      if Enum.any?(selected, fn m -> m.id == user_id end) do
+        selected
+      else
+        [%{id: user_id, username: username} | selected]
+      end
+
+    {:noreply, assign(socket, selected_group_members: updated_members, group_search_results: [])}
+  end
+
+  @impl true
+  def handle_event("remove_member_from_group", %{"user-id" => user_id}, socket) do
+    updated_members =
+      Enum.reject(socket.assigns.selected_group_members, fn m -> m.id == user_id end)
+
+    {:noreply, assign(socket, selected_group_members: updated_members)}
+  end
+
+  @impl true
+  def handle_event("create_group", %{"group_title" => title}, socket) do
+    scope = socket.assigns.current_scope
+    member_ids = Enum.map(socket.assigns.selected_group_members, & &1.id)
+
+    case Chats.create_group_chat(scope, title, member_ids) do
+      {:ok, chat} ->
+        {:noreply,
+         socket
+         |> assign(show_group_modal?: false, selected_group_members: [])
+         |> assign(:chats, Chats.list_user_chats(scope))
+         |> push_patch(to: ~p"/chats/#{chat.id}")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Erro ao criar grupo.")}
+    end
+  end
+
+  # --- EVENTOS DE BUSCA E INICIO DE CHAT (DM) ---
+
+  @impl true
+  def handle_event("search_user", %{"query" => query}, socket) do
+    query = String.trim(query)
+
+    results =
+      if query == "" do
+        []
+      else
+        if String.contains?(query, "#") do
+          case String.split(query, "#") do
+            [username, tag] ->
+              case Accounts.get_user_by_username_and_tag(username, tag) do
+                nil -> []
+                user -> [user]
+              end
+
+            _ ->
+              []
+          end
+        else
           Accounts.search_users_by_username(query, socket.assigns.current_scope.user.id)
         end
       end
@@ -226,6 +408,7 @@ defmodule KgkmWeb.ChatLive.Index do
   end
 
   # --- EVENTOS DE MENSAGEM ---
+
   @impl true
   def handle_event("validate", %{"message" => message_params}, socket) do
     scope = socket.assigns.current_scope
@@ -237,9 +420,7 @@ defmodule KgkmWeb.ChatLive.Index do
         message_params
       )
 
-    {:noreply,
-     socket
-     |> assign(form: to_form(changeset, action: :validate))}
+    {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
   end
 
   @impl true
@@ -247,12 +428,10 @@ defmodule KgkmWeb.ChatLive.Index do
     scope = socket.assigns.current_scope
     chat_id = socket.assigns.active_chat.id
 
-    # Adiciona o chat_id garantido ao payload
     message_params = Map.put(message_params, "chat_id", chat_id)
 
     case Messages.create_message(scope, message_params) do
       {:ok, _message} ->
-        # Limpa o formulario mantendo o chat_id ativo
         {:noreply, assign_message_form(socket, %Message{chat_id: socket.assigns.active_chat.id})}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -264,7 +443,6 @@ defmodule KgkmWeb.ChatLive.Index do
 
   @impl true
   def handle_info({:created, %Message{} = message}, socket) do
-    # Insercao em tempo real na stream sem recarregar a pagina
     {:noreply, stream_insert(socket, :messages, message)}
   end
 
