@@ -9,56 +9,72 @@ defmodule KgkmWeb.ChatLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="flex h-[calc(100vh-8rem)] border rounded-lg overflow-hidden">
+    <div class="h-screen w-screen overflow-hidden bg-white dark:bg-grey-900">
+      <%!-- Componentes de Flash Notices nativos do seu CoreComponents --%>
+      <.flash kind={:info} flash={@flash} />
+      <.flash kind={:error} flash={@flash} />
+      <div class="chat-layout">
         <!-- Sidebar Principal -->
-        <aside class="w-1/3 border-r bg-gray-50 flex flex-col">
+        <aside class="chat-sidebar">
           <!-- Cabeçalho do Usuário, Botão Novo Grupo e Search Bar -->
-          <div class="p-4 border-b bg-white space-y-3">
+          <div class="p-3 border-b bg-gray-200 dark:border-gray-800 space-y-2 bg-white dark:bg-gray-900">
             <div class="flex justify-between items-center">
-              <div class="text-sm font-semibold text-gray-600">
-                <span class="text-blue-600">
-                  {@current_scope.user.username}#{@current_scope.user.tag}
-                </span>
+              <div class="flex items-center gap-2">
+                <div class="user-avatar">
+                  {String.slice(@current_scope.user.username || "U", 0, 2)}
+                </div>
+                <div>
+                  <div class="text-sm font-semibold leading-tight">
+                    {@current_scope.user.username}
+                  </div>
+                  <div class="text-xs text-gray-400">
+                    #{@current_scope.user.tag}
+                  </div>
+                </div>
               </div>
               <!-- Botão para abrir o modal de grupo -->
-              <.button phx-click="open_group_modal" variant="primary" class="text-xs">
-                + Novo Grupo
+              <.button phx-click="open_group_modal" variant="primary">
+                <.icon name="hero-user-group" /> Novo Grupo
               </.button>
             </div>
             
     <!-- Campo de Busca de Usuários -->
-            <form phx-change="search_user" phx-submit="search_user">
+            <form phx-change="search_user" phx-submit="search_user" class="relative">
               <input
                 type="text"
                 name="query"
                 value={@search_query}
                 placeholder="Buscar usuário (ex: alice ou alice#2002)..."
-                class="w-full text-sm rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                class="w-full text-sm pl-9 pr-4 py-1.5 rounded-full border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-orange-500 dark:focus:ring-indigo-500"
                 autocomplete="off"
+              />
+              <.icon
+                name="hero-magnifying-glass"
+                class="w-4 h-4 text-gray-400 absolute left-3 top-2.5"
               />
             </form>
           </div>
           
     <!-- Resultados da Busca (se houver algo digitado) -->
           <%= if @search_query != "" do %>
-            <div class="p-2 bg-blue-50 border-b">
-              <div class="text-xs font-bold text-gray-500 mb-2 px-2 uppercase">
-                Resultados da busca
+            <div class="p-2 bg-orange-50/50 dark:bg-indigo-950/20 border-b border-gray-200 dark:border-gray-800">
+              <div class="text-[11px] font-bold text-gray-400 mb-1 px-2 uppercase">
+                Resultados
               </div>
               <%= if @search_results == [] do %>
-                <div class="text-xs text-gray-400 px-2 py-2">Nenhum usuário encontrado</div>
+                <div class="text-xs text-gray-400 px-2 py-1">Nenhum usuário encontrado</div>
               <% else %>
                 <div
                   :for={user <- @search_results}
-                  class="flex items-center justify-between p-2 hover:bg-blue-100 rounded"
+                  class="flex items-center justify-between p-2 hover:bg-white dark:bg-gray-800 rounded-xl transition"
                 >
-                  <span class="text-sm font-medium">{user.username}#{user.tag}</span>
+                  <div class="flex items-center gap-2">
+                    <div class="user-avatar">{String.slice(user.username, 0, 2)}</div>
+                    <span class="text-sm font-medium">{user.username}#{user.tag}</span>
+                  </div>
                   <.button
                     phx-click="start_dm"
                     phx-value-user-id={user.id}
-                    variant="primary"
-                    class="text-xs py-1 px-2"
                   >
                     Conversar
                   </.button>
@@ -68,73 +84,106 @@ defmodule KgkmWeb.ChatLive.Index do
           <% end %>
           
     <!-- Lista de conversas do usuário -->
-          <div class="flex-1 overflow-y-auto p-4">
-            <h2 class="text-xs font-bold text-gray-500 uppercase mb-3">Minhas Conversas</h2>
-
-            <div :for={chat <- @chats} class="mb-1">
+          <div class="flex-1 overflow-y-auto p-2 space-y-1">
+            <div :for={chat <- @chats}>
               <.link
                 patch={~p"/chats/#{chat.id}"}
-                class={"block p-3 rounded-lg transition #{if @active_chat && @active_chat.id == chat.id, do: "bg-blue-100 text-blue-800 font-semibold", else: "hover:bg-gray-200"}"}
+                class={"flex items-center gap-3 p-2.5 rounded-2xl transition #{if @active_chat && @active_chat.id == chat.id, do: "bg-orange-500 text-white dark:bg-indigo-600", else: "hover:bg-gray-100 dark:hover:bg-gray-800"}"}
               >
-                <div class="flex justify-between items-center">
-                  <span>{chat.title || "Conversa Direta"}</span>
-                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-600">
-                    {if chat.type == :group, do: "GRUPO", else: "DM"}
-                  </span>
+                <div class={"user-avatar #{if @active_chat && @active_chat.id == chat.id, do: "!bg-white/20 !text-white"}"}>
+                  {if chat.type == :group, do: "G", else: "D"}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex justify-between items-baseline">
+                    <p class="text-sm font-semibold truncate">{chat.title || "Conversa Direta"}</p>
+                    <span class="text-[10px] opacity-75">
+                      {if chat.type == :group, do: "Grupo", else: "DM"}
+                    </span>
+                  </div>
                 </div>
               </.link>
             </div>
           </div>
+          
+    <!-- Botão Flutuante (FAB) Estilo Telegram no canto da Sidebar -->
+          <div class="absolute bottom-4 right-4">
+            <.button phx-click="open_group_modal" variant="primary">
+              <.icon name="hero-pencil" />
+            </.button>
+          </div>
         </aside>
         
     <!-- Area de Mensagens da Sala Ativa -->
-        <main class="w-2/3 flex flex-col justify-between bg-gray-100">
+        <main class="flex-1 flex flex-col justify-between bg-gray-100/60 dark:bg-gray-950 relative">
           <%= if @active_chat do %>
-            <!-- Subcabecalho da Sala -->
-            <div class="p-4 border-b bg-gray-50 font-bold text-gray-700 flex justify-between items-center">
-              <span>{@active_chat.title || "Chat Ativo"}</span>
+            <!-- Subcabeçalho da Conversa -->
+            <div class="p-3 border-b bg-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center gap-3 z-10">
+              <div class="user-avatar">
+                {if @active_chat.type == :group, do: "G", else: "D"}
+              </div>
+              <div>
+                <h3 class="text-sm font-bold leading-tight">{@active_chat.title || "DM"}</h3>
+                <p class="text-xs text-gray-400">em tempo real</p>
+              </div>
             </div>
             
     <!-- Feed de Mensages (Stream) -->
-            <div id="messages-feed" phx-update="stream" class="flex-1 p-4 overflow-y-auto space-y-4">
+            <div
+              id="messages-feed"
+              phx-update="stream"
+              class="flex-1 p-4 overflow-y-auto flex flex-col space-y-2"
+            >
+              <div class="chat-date-badge">Hoje</div>
               <div
                 :for={{dom_id, msg} <- @streams.messages}
                 id={dom_id}
                 class={"flex flex-col #{if msg.user_id == @current_scope.user.id, do: "items-end", else: "items-start"}"}
               >
-                <span class="text-xs text-gray-500 mb-1">{msg.user.username || msg.user.email}</span>
-                <div class={"p-3 rounded-lg max-w-md #{if msg.user_id == @current_scope.user.id, do: "bg-blue-600 text-white", else: "bg-gray-100 text-gray-800"}"}>
-                  {msg.content}
+                <%= if msg.user_id != @current_scope.user.id do %>
+                  <span class="text-[10px] text-gray-400 ml-2 mb-0.5">{msg.user.username}</span>
+                <% end %>
+                <div class={
+                  if msg.user_id == @current_scope.user.id,
+                    do: "msg-bubble-sent",
+                    else: "msg-bubble-received"
+                }>
+                  <p class="break-word">{msg.content}</p>
+                  <div class="text-[9px] text-right mt-1 opacity-75">
+                    {Calendar.strftime(msg.inserted_at, "%H:%M")}
+                  </div>
                 </div>
               </div>
             </div>
             
-    <!-- Input de Envio de Mensagem -->
-            <div class="p-4 border-t bg-gray-50">
+    <!-- Input de Envio de Mensagem sem bordas estranhas -->
+            <div class="p-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
               <.form
                 for={@form}
                 id="message-form"
                 phx-change="validate"
                 phx-submit="save"
-                class="flex gap-2 items-center"
+                class="flex items-center gap-2"
               >
                 <div class="flex-1">
-                  <.input
-                    field={@form[:content]}
+                  <input
                     type="text"
-                    placeholder="Digite sua mensagem..."
+                    name={@form[:content].name}
+                    value={@form[:content].value}
+                    placeholder="Escreva uma mensagem..."
                     autocomplete="off"
+                    class="w-full text-sm px-4 py-2.5 rounded-full border-none bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
 
-                <.button phx-disable-with="Enviando..." variant="primary" class="mt-2">
-                  Enviar
+                <.button phx-disable-with="..." variant="primary" class="!rounded-full !p-3 shrink-0">
+                  <.icon name="hero-paper-airplane" class="w-4 h-4" />
                 </.button>
               </.form>
             </div>
           <% else %>
-            <div class="flex items-center justify-center h-full text-gray-400">
-              Selecione um chat para começar a conversa.
+            <div class="flex flex-col items-center justify-center h-full text-gray-400 space-y-2">
+              <.icon name="hero-chat-bubble-left-right" class="w-12 h-12 stroke-1" />
+              <p class="text-sm">Selecione um chat para começar a conversa.</p>
             </div>
           <% end %>
         </main>
@@ -229,7 +278,7 @@ defmodule KgkmWeb.ChatLive.Index do
           </div>
         </div>
       <% end %>
-    </Layouts.app>
+    </div>
     """
   end
 
