@@ -100,6 +100,41 @@
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 /* Make LiveView wrapper divs transparent for layout */
-[data-phx-session], [data-phx-teleported-src] { display: contents }
+[data-phx-session],
+[data-phx-teleported-src] {
+  display: contents
+}
 
 /* This file is for your main application CSS */
+
+
+/* assets/css/app.css */
+
+/* Estrutura Principal Fullscreen (Estilo Telegram Web) */
+@utility chat-layout {
+  @apply flex h-screen w-full overflow-hidden bg-white dark:bg-gray-900;
+}
+
+/* Sidebar */
+@utility chat-sidebar {
+  @apply w-80 md:w-96 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col relative shrink-0;
+}
+
+/* Balões de Mensagem Estilo Telegram */
+@utility msg-bubble-sent {
+  @apply max-w-xs md:max-w-md p-3 rounded-2xl rounded-tr-none bg-indigo-600 text-white shadow-sm self-end text-sm;
+}
+
+@utility msg-bubble-received {
+  @apply max-w-xs md:max-w-md p-3 rounded-2xl rounded-tl-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm border border-gray-100 dark:border-gray-700/50 self-start text-sm;
+}
+
+/* Divisor de Data */
+@utility chat-date-badge {
+  @apply mx-auto my-3 px-3 py-1 rounded-full text-[11px] font-medium bg-gray-200/70 dark:bg-gray-800 text-gray-600 dark:text-gray-300 backdrop-blur-sm;
+}
+
+/* Avatares Redondos */
+@utility user-avatar {
+  @apply w-10 h-10 rounded-full bg-indigo-500/20 text-indigo-600 dark:bg-indigo-400 font-bold flex items-center justify-center uppercase text-sm shrink-0;
+}
