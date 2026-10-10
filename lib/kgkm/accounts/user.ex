@@ -10,6 +10,7 @@ defmodule Kgkm.Accounts.User do
     field :tag, :string
     field :password, :string, virtual: true, redact: true
     field :role, Ecto.Enum, values: [:admin, :user]
+    field :avatar_url, :string
     field :hashed_password, :string, redact: true
     field :confirmed_at, :utc_datetime
     field :authenticated_at, :utc_datetime, virtual: true
@@ -177,5 +178,11 @@ defmodule Kgkm.Accounts.User do
     (:rand.uniform(10000) - 1)
     |> Integer.to_string()
     |> String.pad_leading(4, "0")
+  end
+
+  def avatar_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:avatar_url])
+    |> validate_required([:avatar_url])
   end
 end
