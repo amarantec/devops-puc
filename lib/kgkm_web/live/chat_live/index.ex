@@ -9,7 +9,11 @@ defmodule KgkmWeb.ChatLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="h-screen w-screen overflow-hidden bg-white dark:bg-grey-900">
+    <div
+      id="chat-app-root"
+      phx-hook="PageTitle"
+      class="h-screen w-screen overflow-hidden bg-white dark:bg-gray-900 relative"
+    >
       <%!-- Componentes de Flash Notices nativos do seu CoreComponents --%>
       <.flash kind={:info} flash={@flash} />
       <.flash kind={:error} flash={@flash} />
@@ -103,6 +107,13 @@ defmodule KgkmWeb.ChatLive.Index do
                     </span>
                   </div>
                 </div>
+                
+    <!-- BADGE DE NÂO LIDAS -->
+                <%= if chat.unread_count > 0 do %>
+                  <span class="bg-orange-500 dark:bg-indigo-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0">
+                    {chat.unread_count}
+                  </span>
+                <% end %>
               </.link>
             </div>
           </div>
@@ -288,9 +299,22 @@ defmodule KgkmWeb.ChatLive.Index do
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
 
+    chats =
+      Chats.list_user_chats(scope)
+      |> Enum.map(&Map.put(&1, :unread_count, 0))
+
+    if connected?(socket) do
+      # Inscreve o usuário em TODOS os chats dele para escutar mensagens em background
+      Enum.each(chats, fn chat ->
+        Messages.subscribe_chat_messages(chat.id)
+      end)
+    end
+
+    chats_with_unread = Enum.map(chats, &Map.put(&1, :unread_count, 0))
+
     {:ok,
      socket
-     |> assign(:chats, Chats.list_user_chats(scope))
+     |> assign(:chats, chats_with_unread)
      |> assign(:active_chat, nil)
      |> assign(:search_query, "")
      |> assign(:search_results, [])
@@ -320,7 +344,15 @@ defmodule KgkmWeb.ChatLive.Index do
     chat = Chats.get_chat!(scope, chat_id)
     messages = Messages.list_messages(chat_id)
 
+    # Zera as mensagens não lidas do chat aberto
+    updated_chats =
+      Enum.map(socket.assigns.chats, fn c ->
+        if c.id == chat_id, do: %{c | unread_count: 0}, else: c
+      end)
+
     socket
+    |> assign(:chats, updated_chats)
+    |> notify_total_unread()
     |> assign(:active_chat, chat)
     |> assign_message_form(%Message{chat_id: chat.id})
     |> stream(:messages, messages, reset: true)
@@ -494,7 +526,38 @@ defmodule KgkmWeb.ChatLive.Index do
 
   @impl true
   def handle_info({:created, %Message{} = message}, socket) do
-    {:noreply, stream_insert(socket, :messages, message)}
+    active_chat = socket.assigns.active_chat
+    current_user = socket.assigns.current_scope.user
+
+    if active_chat && active_chat.id == message.chat_id do
+      # Se o usuário está no chat atual, apenas insere na stream
+      {:noreply, stream_insert(socket, :messages, message)}
+    else
+      # Se a mensagem veio de OUTRO chat:
+      # Incrementa o contador de não lidas do chat correspondente na sidebar
+      updated_chats =
+        Enum.map(socket.assigns.chats, fn chat ->
+          if chat.id == message.chat_id do
+            Map.update(chat, :unread_count, 1, &(&1 + 1))
+          else
+            chat
+          end
+        end)
+
+      # Dispara uma notificação flash se a mensagem não foi enviada pelo próprio usuário
+      socket =
+        if message.user_id != current_user.id do
+          sender_name = message.user.username || "Someone"
+          put_flash(socket, :info, "Nova mensagem de #{sender_name}")
+        else
+          socket
+        end
+
+      {:noreply,
+       socket
+       |> assign(chats: updated_chats)
+       |> notify_total_unread()}
+    end
   end
 
   def handle_info(_other, socket), do: {:noreply, socket}
@@ -504,5 +567,10 @@ defmodule KgkmWeb.ChatLive.Index do
     scope = socket.assigns.current_scope
     changeset = Messages.change_message(scope, message)
     assign(socket, :form, to_form(changeset))
+  end
+
+  defp notify_total_unread(socket) do
+    total = Enum.sum_by(socket.assigns.chats, & &1.unread_count)
+    push_event(socket, "update_title", %{count: total})
   end
 end
