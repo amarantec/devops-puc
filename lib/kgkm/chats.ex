@@ -14,10 +14,12 @@ defmodule Kgkm.Chats do
       order_by: [desc: c.updated_at]
     )
     |> Repo.all()
+    |> Repo.preload(chat_members: :user)
   end
 
   def get_chat!(%Scope{} = _scope, id) do
     Repo.get!(Chat, id)
+    |> Repo.preload(chat_members: :user)
   end
 
   @doc """
