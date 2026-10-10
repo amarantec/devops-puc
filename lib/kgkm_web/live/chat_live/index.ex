@@ -36,8 +36,18 @@ defmodule KgkmWeb.ChatLive.Index do
               </:item>
 
               <:item navigate={~p"/users/settings"}>
+                <.icon name="hero-bookmark" class="w-5 h-5 text-gray-500" />
+                <span>Conversas Salvas</span>
+              </:item>
+
+              <:item navigate={~p"/users/settings"}>
+                <.icon name="hero-user" class="w-5 h-5 text-gray-500" />
+                <span>Contatos</span>
+              </:item>
+
+              <:item navigate={~p"/users/settings"}>
                 <.icon name="hero-cog-6-tooth" class="w-5 h-5 text-gray-500" />
-                <span>Settings</span>
+                <span>Configurações</span>
               </:item>
               <:item href={~p"/users/log-out"} method="delete" class="text-error">
                 <.icon name="hero-arrow-right-on-rectangle" class="w-5 h-5" />
