@@ -60,7 +60,7 @@ defmodule KgkmWeb.ChatLive.Index do
               />
             </form>
           </div>
-          
+
     <!-- Resultados da Busca (se houver algo digitado) -->
           <%= if @search_query != "" do %>
             <div class="p-2 bg-orange-50/50 dark:bg-indigo-950/20 border-b border-gray-200 dark:border-gray-800">
@@ -88,26 +88,33 @@ defmodule KgkmWeb.ChatLive.Index do
               <% end %>
             </div>
           <% end %>
-          
+
     <!-- Lista de conversas do usuário -->
           <div class="flex-1 overflow-y-auto p-2 space-y-1">
             <div :for={chat <- @chats}>
+              <% info = chat_display_info(chat, @current_scope.user.id) %>
               <.link
                 patch={~p"/chats/#{chat.id}"}
                 class={"flex items-center gap-3 p-2.5 rounded-2xl transition #{if @active_chat && @active_chat.id == chat.id, do: "bg-orange-500 text-white dark:bg-indigo-600", else: "hover:bg-gray-100 dark:hover:bg-gray-800"}"}
               >
-                <div class={"user-avatar #{if @active_chat && @active_chat.id == chat.id, do: "!bg-white/20 !text-white"}"}>
-                  {if chat.type == :group, do: "G", else: "D"}
+                <!-- Avatar Dinâmico (Foto ou Iniciais) -->
+                <div class={"user-avatar overflow-hidden #{if @active_chat && @active_chat.id == chat.id, do: "!bg-white/20 !text-white"}"}>
+                  <%= if info.avatar_url do %>
+                    <img src={info.avatar_url} class="w-full h-full object-cover" alt="Avatar" />
+                  <% else %>
+                    {info.initials}
+                  <% end %>
                 </div>
+
                 <div class="flex-1 min-w-0">
                   <div class="flex justify-between items-baseline">
-                    <p class="text-sm font-semibold truncate">{chat.title || "Conversa Direta"}</p>
+                    <p class="text-sm font-semibold truncate">{info.title}</p>
                     <span class="text-[10px] opacity-75">
                       {if chat.type == :group, do: "Grupo", else: "DM"}
                     </span>
                   </div>
                 </div>
-                
+
     <!-- BADGE DE NÂO LIDAS -->
                 <%= if chat.unread_count > 0 do %>
                   <span class="bg-orange-500 dark:bg-indigo-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0">
@@ -117,7 +124,7 @@ defmodule KgkmWeb.ChatLive.Index do
               </.link>
             </div>
           </div>
-          
+
     <!-- Botão Flutuante (FAB) Estilo Telegram no canto da Sidebar -->
           <div class="absolute bottom-4 right-4">
             <.button phx-click="open_group_modal" variant="primary">
@@ -125,21 +132,26 @@ defmodule KgkmWeb.ChatLive.Index do
             </.button>
           </div>
         </aside>
-        
+
     <!-- Area de Mensagens da Sala Ativa -->
         <main class="flex-1 flex flex-col justify-between bg-gray-100/60 dark:bg-gray-950 relative">
           <%= if @active_chat do %>
+            <% active_info = chat_display_info(@active_chat, @current_scope.user.id) %>
             <!-- Subcabeçalho da Conversa -->
             <div class="p-3 border-b bg-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center gap-3 z-10">
-              <div class="user-avatar">
-                {if @active_chat.type == :group, do: "G", else: "D"}
+              <div class="user-avatar overflow-hidden">
+                <%= if active_info.avatar_url do %>
+                  <img src={active_info.avatar_url} class="w-full h-full object-cover" alt="Avatar" />
+                <% else %>
+                  {active_info.initials}
+                <% end %>
               </div>
               <div>
-                <h3 class="text-sm font-bold leading-tight">{@active_chat.title || "DM"}</h3>
+                <h3 class="text-sm font-bold leading-tight">{active_info.title}</h3>
                 <p class="text-xs text-gray-400">em tempo real</p>
               </div>
             </div>
-            
+
     <!-- Feed de Mensages (Stream) -->
             <div
               id="messages-feed"
@@ -167,7 +179,7 @@ defmodule KgkmWeb.ChatLive.Index do
                 </div>
               </div>
             </div>
-            
+
     <!-- Input de Envio de Mensagem sem bordas estranhas -->
             <div class="p-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
               <.form
@@ -201,7 +213,7 @@ defmodule KgkmWeb.ChatLive.Index do
           <% end %>
         </main>
       </div>
-      
+
     <!-- MODAL FUNCIONAL DE CRIAÇÃO DE GRUPO -->
       <%= if @show_group_modal? do %>
         <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -222,7 +234,7 @@ defmodule KgkmWeb.ChatLive.Index do
                   class="w-full text-sm rounded border-gray-300"
                 />
               </div>
-              
+
     <!-- Busca e Seleção de Membros -->
               <div>
                 <label class="block text-sm font-medium mb-1">Buscar Membro por Tag/Username</label>
@@ -234,7 +246,7 @@ defmodule KgkmWeb.ChatLive.Index do
                   class="w-full text-sm rounded border-gray-300 mb-2"
                   autocomplete="off"
                 />
-                
+
     <!-- Resultados de Busca de Membros -->
                 <%= if @group_search_results != [] do %>
                   <div class="border rounded p-2 bg-gray-50 max-h-32 overflow-y-auto mb-2 space-y-1">
@@ -255,7 +267,7 @@ defmodule KgkmWeb.ChatLive.Index do
                     </div>
                   </div>
                 <% end %>
-                
+
     <!-- Membros Selecionados -->
                 <div class="text-xs font-semibold text-gray-500 mb-1">Membros Selecionados:</div>
                 <div class="flex flex-wrap gap-1 border p-2 rounded min-h-[40px]">
@@ -572,5 +584,31 @@ defmodule KgkmWeb.ChatLive.Index do
   defp notify_total_unread(socket) do
     total = Enum.sum_by(socket.assigns.chats, & &1.unread_count)
     push_event(socket, "update_title", %{count: total})
+  end
+
+  defp chat_display_info(chat, current_user_id) do
+    if chat.type == :group do
+      %{
+        title: chat.title || "Grupo",
+        avatar_url: nil,
+        initials: "GR"
+      }
+    else
+      # Procura o outro membro que não é o usuário logado da DM
+      other_member =
+        Enum.find(chat.chat_members || [], fn member -> member.user_id != current_user_id end)
+
+      other_user = other_member && other_member.user
+
+      username = (other_user && other_user.username) || "DM"
+      avatar_url = other_user && other_user.avatar_url
+      initials = String.upcase(String.slice(username, 0, 2))
+
+      %{
+        title: username,
+        avatar_url: avatar_url,
+        initials: initials
+      }
+    end
   end
 end
