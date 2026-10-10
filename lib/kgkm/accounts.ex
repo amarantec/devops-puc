@@ -315,4 +315,13 @@ defmodule Kgkm.Accounts do
     )
     |> Repo.all()
   end
+
+  @doc """
+  Atualiza a foto de perfil do usuário
+  """
+  def update_user_avatar(%User{} = user, avatar_url) do
+    user
+    |> User.avatar_changeset(%{avatar_url: avatar_url})
+    |> Repo.update()
+  end
 end
