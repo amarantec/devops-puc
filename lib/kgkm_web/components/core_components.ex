@@ -469,4 +469,77 @@ defmodule KgkmWeb.CoreComponents do
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
   end
+
+  @doc """
+  Renders a dropdown menu component.
+
+  ## Examples
+    <.dropdown id="profile-menu">
+      <:trigger>
+        <button class="btn btn-ghost btn-circle">
+          <.icon name="hero-bars-3" class="size-6" />
+        </button>
+      </:trigger>
+      <:item navigate={~p"/users/settings"}>
+        <.icon name="hero-cog-6-tooth" class="size-5" /> Settings
+      </:item>
+      <:item phx-click="open_group_modal">
+        <.icon name="hero-user-group" class="size-5" /> Novo Grupo
+      </:item>
+    </.dropdown>
+  """
+  attr :id, :string, required: true
+  attr :class, :string, default: nil
+
+  slot :trigger, required: true
+
+  slot :item do
+    attr :navigate, :string
+    attr :patch, :string
+    attr :href, :string
+    attr :method, :string
+    attr :class, :string
+    attr :"phx-click", :string
+  end
+
+  def dropdown(assigns) do
+    ~H"""
+    <div id={@id} class={["dropdown dropdown-bottom dropdown-start", @class]}>
+      <div tabindex="0" role="button">
+        {render_slot(@trigger)}
+      </div>
+      <ul
+        tabindex="0"
+        class="dropdown-content menu z-50 p-2 shadow-2xl bg-base-100 dark:bg-gray-800 text-base-content rounded-2xl w-60 border border-base-200 dark:border-gray-700/60 mt-2 space-y-1"
+      >
+        <li :for={item <- @item}>
+          <.link
+            :if={item[:navigate] || item[:patch] || item[:href]}
+            navigate={item[:navigate]}
+            patch={item[:patch]}
+            href={item[:href]}
+            method={item[:method]}
+            class={[
+              "flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-base-200 dark:hover:bg-gray-700/60 font-medium text-sm transition",
+              item[:class]
+            ]}
+          >
+            {render_slot(item)}
+          </.link>
+          <button
+            :if={!item[:navigate] && !item[:patch] && !item[:href]}
+            type="button"
+            class={[
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-base-200 dark:hover:bg-gray-700/60 font-medium text-sm text-left transition",
+              item[:class]
+            ]}
+            {Map.take(item, [:id, :name, :value, :"phx-click", :"phx-target", :"phx-value-id", :"phx-value-user-id", :"phx-value-username"])}
+          >
+            {render_slot(item)}
+          </button>
+        </li>
+      </ul>
+    </div>
+    """
+  end
 end
