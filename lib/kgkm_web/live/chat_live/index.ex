@@ -17,28 +17,30 @@ defmodule KgkmWeb.ChatLive.Index do
         <!-- Sidebar Principal -->
         <aside class="chat-sidebar">
           <!-- Cabeçalho do Usuário, Botão Novo Grupo e Search Bar -->
-          <div class="p-3 border-b bg-gray-200 dark:border-gray-800 space-y-2 bg-white dark:bg-gray-900">
-            <div class="flex justify-between items-center">
-              <div class="flex items-center gap-2">
-                <div class="user-avatar">
-                  {String.slice(@current_scope.user.username || "U", 0, 2)}
-                </div>
-                <div>
-                  <div class="text-sm font-semibold leading-tight">
-                    {@current_scope.user.username}
-                  </div>
-                  <div class="text-xs text-gray-400">
-                    #{@current_scope.user.tag}
-                  </div>
-                </div>
-              </div>
-              <!-- Botão para abrir o modal de grupo -->
-              <.button phx-click="open_group_modal" variant="primary">
-                <.icon name="hero-user-group" /> Novo Grupo
-              </.button>
-            </div>
-            
-    <!-- Campo de Busca de Usuários -->
+          <div class="p-3 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2 bg-white dark:bg-gray-900">
+            <!-- DROPDOWN COMPONENT DO CORE COMPONENTS -->
+            <.dropdown id="main-menu">
+              <:trigger>
+                <button class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition">
+                  <.icon name="hero-bars-3" class="w-6 h-6" />
+                </button>
+              </:trigger>
+
+              <:item phx-click="open_group_modal">
+                <.icon name="hero-user-group" class="w-5 h-5 text-indigo-500" />
+                <span>Novo Grupo</span>
+              </:item>
+
+              <:item navigate={~p"/users/settings"}>
+                <.icon name="hero-cog-6-tooth" class="w-5 h-5 text-gray-500" />
+                <span>Settings</span>
+              </:item>
+              <:item href={~p"/users/log-out"} method="delete" class="text-error">
+                <.icon name="hero-arrow-right-on-rectangle" class="w-5 h-5" />
+                <span>Log out</span>
+              </:item>
+            </.dropdown>
+            <!-- Campo de Busca de Usuários -->
             <form phx-change="search_user" phx-submit="search_user" class="relative">
               <input
                 type="text"
@@ -59,7 +61,7 @@ defmodule KgkmWeb.ChatLive.Index do
           <%= if @search_query != "" do %>
             <div class="p-2 bg-orange-50/50 dark:bg-indigo-950/20 border-b border-gray-200 dark:border-gray-800">
               <div class="text-[11px] font-bold text-gray-400 mb-1 px-2 uppercase">
-                Resultados
+                Contatos
               </div>
               <%= if @search_results == [] do %>
                 <div class="text-xs text-gray-400 px-2 py-1">Nenhum usuário encontrado</div>
