@@ -10,7 +10,7 @@ defmodule Kgkm.Chats.Chat do
     field :is_muted?, :boolean, default: false
 
     has_many :messages, Kgkm.Messages.Message
-    # Futuramente: has_many :chat_members, Kgkm.Chats.ChatMember
+    has_many :chat_members, Kgkm.Chats.ChatMember
     timestamps(type: :utc_datetime)
   end
 
