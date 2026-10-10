@@ -542,4 +542,103 @@ defmodule KgkmWeb.CoreComponents do
     </div>
     """
   end
+
+  # --- COMPONENTE AUXILIAR PARA ITENS DE MENU ---
+  attr :icon, :string, required: true
+  attr :title, :string, required: true
+  attr :navigate, :string, default: nil
+
+  def settings_menu_item(assigns) do
+    ~H"""
+    <.link
+      navigate={@navigate || "#"}
+      class="flex items-center justify-between py-3.5 px-2 group hover:bg-zinc-50 dark:hover:bg-zinc-800/40 rounded-xl transition-colors cursor-pointer"
+    >
+      <div class="flex items-center gap-3.5">
+        <div class="p-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc dark:text-zinc-300 group-hover:text-orange-500 dark:group-hover:text-indigo-400 transition-colors">
+          <.icon name={@icon} class="w-5 h-5" />
+        </div>
+        <span class="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+          {@title}
+        </span>
+      </div>
+      <.icon
+        name="hero-chevron-right"
+        class="w-4 h-4 text-zinc-400 group-hover:translate-x-0.5 transition-transform"
+      />
+    </.link>
+    """
+  end
+
+  # --- COMPONENT MODAL ---
+  attr :id, :string, required: true
+  attr :show, :boolean, default: false
+  attr :on_cancel, :any, default: nil
+  slot :inner_block, required: true
+
+  def custom_modal(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      class={["relative z-50 hidden", !@show && "hidden"]}
+      phx-mounted={@show && show_modal(@id)}
+      phx-remove={hide_modal(@id)}
+    >
+      
+    <!-- Backdrop (fundo escurecido com blur suave) -->
+      <div
+        id="{@id}-bg"
+        class="fixed inset-0 bg-zinc-950/60 backdrop-blur-md transition-opacity duration-200 opacity-0"
+        aria-hidden="true"
+        phx-click={@on_cancel || hide_modal(@id)}
+      />
+      
+    <!-- Container de alinhamento -->
+      <div class="fixed inset-0 z-10 overflow-y-auto p-4 sm:p-6 md:p-12 flex items-center justify-center">
+        <!-- corpo do modal -->
+        <div
+          id={"#{@id}-container"}
+          class="relative transform overflow-hidden rounded-3xl bg-white dark:bg-zinc-900 p-5 sm:p-7 shadow-2xl transition-all w-full md:max-w-3xl lg:max-w-4xl border border-zinc-200/60 dark:border-zinc-800 scale-95 opacity-0 duration-300"
+        >
+          <!-- Botão de fechar no canto superior direito -->
+          <button
+            type="button"
+            phx-click={@on_cancel || hide_modal(@id)}
+            class="absolute right-4 top-4 z-20 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors focus:outline-none cursor-pointer"
+          >
+            <.icon name="hero-x-mark" class="w-5 h-5" />
+          </button>
+          
+    <!-- Slot, onde entra o conteudo -->
+          <div class="mt-10">
+            {render_slot(@inner_block)}
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  # --- FUNÇÕES JS PARA REPLICAR O COMPORTAMENTO DO PHOENIX ---
+  def show_modal(id) do
+    JS.show(to: "##{id}")
+    |> JS.transition({"transition-all ease-out duration-300", "opacity-0", "opacity-100"},
+      to: "##{id}-bg"
+    )
+    |> JS.transition(
+      {"transition-all ease-out duration-300", "scale-95 opacity-0", "scale-100 opacity-100"},
+      to: "##{id}-container"
+    )
+  end
+
+  def hide_modal(id) do
+    JS.transition({"transition-all ease-in duration-200", "opacity-100", "opacity-0"},
+      to: "##{id}-bg"
+    )
+    |> JS.transition(
+      {"transition-all ease-in duration-200", "scale-100 opacity-100", "scale-95 opacity-0"},
+      to: "##{id}-container"
+    )
+    |> JS.hide(to: "##{id}", transition: {"transition duration-200", "block", "hidden"})
+  end
 end
