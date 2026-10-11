@@ -36,7 +36,29 @@ window.addEventListener("copy_to_clipboard", (e) => {
   if (e.detail && e.detail.text) {
     navigator.clipboard.writeText(e.detail.text);
   }
+
+  // Tenta encontrar o botão que disparou o evento para dar o feedback visual
+  let button = e.target.closest("button");
+  if (button) {
+    let originalHTML = button.innerHTML;
+    // Altera o visual do botão temporariamente para indicar sucesso
+    button.classList.add("bg-emerald-500", "text-white", "!border-emerald-500");
+    button.classList.remove("bg-gray-200/70", "dark:bg-gray-700", "text-gray-700", "dark:text-gray-200");
+    button.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5">
+    <path fill-rule="evenodd" d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" />
+    </svg> Copiado!
+    `;
+
+      // Restaura o botão original após 1.5 segundos
+      setTimeout(() => {
+        button.classList.remove("bg-emerald-500", "text-white", "!border-emerald-500");
+        button.classList.add("bg-gray-200/70", "dark:bg-gray-700", "text-gray-700", "dark:text-gray-200");
+        button.innerHTML = originalHTML;
+    }, 1500);
+  }
 });
+
 Hooks.MediaRecorder = {
   mounted() {
     let mediaRecorder;
