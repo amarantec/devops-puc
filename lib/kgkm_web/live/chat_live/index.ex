@@ -35,8 +35,8 @@ defmodule KgkmWeb.ChatLive.Index do
                 <span>Novo Grupo</span>
               </:item>
 
-              <:item navigate={~p"/users/settings"}>
-                <.icon name="hero-bookmark" class="w-5 h-5 text-gray-500" />
+              <:item phx-click="open_saved_messages">
+                <.icon name="hero-bookmark" class="w-5 h-5 text-amber-500" />
                 <span>Conversas Salvas</span>
               </:item>
 
@@ -70,7 +70,7 @@ defmodule KgkmWeb.ChatLive.Index do
               />
             </form>
           </div>
-
+          
     <!-- Resultados da Busca (se houver algo digitado) -->
           <%= if @search_query != "" do %>
             <div class="p-2 bg-orange-50/50 dark:bg-indigo-950/20 border-b border-gray-200 dark:border-gray-800">
@@ -98,7 +98,7 @@ defmodule KgkmWeb.ChatLive.Index do
               <% end %>
             </div>
           <% end %>
-
+          
     <!-- Lista de conversas do usuário -->
           <div class="flex-1 overflow-y-auto p-2 space-y-1">
             <div :for={chat <- @chats}>
@@ -124,7 +124,7 @@ defmodule KgkmWeb.ChatLive.Index do
                     </span>
                   </div>
                 </div>
-
+                
     <!-- BADGE DE NÂO LIDAS -->
                 <%= if chat.unread_count > 0 do %>
                   <span class="bg-orange-500 dark:bg-indigo-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0">
@@ -134,7 +134,7 @@ defmodule KgkmWeb.ChatLive.Index do
               </.link>
             </div>
           </div>
-
+          
     <!-- Botão Flutuante (FAB) Estilo Telegram no canto da Sidebar -->
           <div class="absolute bottom-4 right-4">
             <.button phx-click="open_group_modal" variant="primary">
@@ -142,7 +142,7 @@ defmodule KgkmWeb.ChatLive.Index do
             </.button>
           </div>
         </aside>
-
+        
     <!-- Area de Mensagens da Sala Ativa -->
         <main class="flex-1 flex flex-col justify-between bg-gray-100/60 dark:bg-gray-950 relative">
           <%= if @active_chat do %>
@@ -161,7 +161,7 @@ defmodule KgkmWeb.ChatLive.Index do
                 <p class="text-xs text-gray-400">em tempo real</p>
               </div>
             </div>
-
+            
     <!-- Feed de Mensages (Stream) -->
             <div
               id="messages-feed"
@@ -196,7 +196,7 @@ defmodule KgkmWeb.ChatLive.Index do
                         <p class="truncate opacity-75">{msg.reply_to.content}</p>
                       </div>
                     <% end %>
-
+                    
     <!-- Renderiza imagem  ou arquivo se houver file_url -->
                     <%= if msg.file_url do %>
                       {ext = String.downcase(Path.extname(msg.file_url))}
@@ -218,7 +218,7 @@ defmodule KgkmWeb.ChatLive.Index do
                             <.icon name="hero-arrow-down-tray" class="w-4 h-4" />
                           </a>
                         </div>
-
+                        
     <!-- Se for Áudio (Música gravada ou enviada) -->
                       <% else %>
                         <%= if ext in [".mp3", ".wav", ".ogg"] do %>
@@ -273,7 +273,7 @@ defmodule KgkmWeb.ChatLive.Index do
                       {Calendar.strftime(msg.inserted_at, "%H:%M")}
                     </div>
                   </div>
-
+                  
     <!-- Se for mensagem recebida, o menu de ações fica à direita -->
                   <%= if msg.user_id != @current_scope.user.id do %>
                     <.msg_actions_dropdown msg_id={msg.id} msg_content={msg.content} is_me={false} />
@@ -281,7 +281,7 @@ defmodule KgkmWeb.ChatLive.Index do
                 </div>
               </div>
             </div>
-
+            
     <!-- Caixinha de Citação/Resposta -->
 
             <%= if @replying_to do %>
@@ -302,7 +302,7 @@ defmodule KgkmWeb.ChatLive.Index do
                 </button>
               </div>
             <% end %>
-
+            
     <!-- Área de Preview do Arquivo selecionado antes de enviar -->
             <%= for entry <- @uploads.chat_file.entries do %>
               <div class="px-4 py-2 bg-gray-50 dark:bg-gray-800/80 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
@@ -327,7 +327,7 @@ defmodule KgkmWeb.ChatLive.Index do
                 </button>
               </div>
             <% end %>
-
+            
     <!-- Input de Envio de Mensagem e Anexos -->
             <div class="p-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
               <.form
@@ -337,7 +337,7 @@ defmodule KgkmWeb.ChatLive.Index do
                 phx-submit="save"
                 class="flex items-center gap-2"
               >
-
+                
     <!-- Botão de anexar arquivos -->
                 <label class="p-2.5 rounded-full hover:bg-gray-100 dark:bg-gray-800 text-gray-500 cursor-pointer shrink-0 transition">
                   <.icon name="hero-paper-clip" class="w-5 h-5" />
@@ -360,7 +360,7 @@ defmodule KgkmWeb.ChatLive.Index do
                     class="w-full text-sm px-4 py-2.5 rounded-full border-none bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
-
+                
     <!-- Botão Dinâmico: Se vazio e sem arquivo -> Microfone | Se ou com arquivo -> Enviar -->
                 <%= if (@form[:content].value in [nil, ""]) && @uploads.chat_file.entries == [] do %>
                   <button
@@ -394,7 +394,7 @@ defmodule KgkmWeb.ChatLive.Index do
           <% end %>
         </main>
       </div>
-
+      
     <!-- MODAL FUNCIONAL DE CRIAÇÃO DE GRUPO -->
       <%= if @show_group_modal? do %>
         <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -415,7 +415,7 @@ defmodule KgkmWeb.ChatLive.Index do
                   class="w-full text-sm rounded border-gray-300"
                 />
               </div>
-
+              
     <!-- Busca e Seleção de Membros -->
               <div>
                 <label class="block text-sm font-medium mb-1">Buscar Membro por Tag/Username</label>
@@ -427,7 +427,7 @@ defmodule KgkmWeb.ChatLive.Index do
                   class="w-full text-sm rounded border-gray-300 mb-2"
                   autocomplete="off"
                 />
-
+                
     <!-- Resultados de Busca de Membros -->
                 <%= if @group_search_results != [] do %>
                   <div class="border rounded p-2 bg-gray-50 max-h-32 overflow-y-auto mb-2 space-y-1">
@@ -448,7 +448,7 @@ defmodule KgkmWeb.ChatLive.Index do
                     </div>
                   </div>
                 <% end %>
-
+                
     <!-- Membros Selecionados -->
                 <div class="text-xs font-semibold text-gray-500 mb-1">Membros Selecionados:</div>
                 <div class="flex flex-wrap gap-1 border p-2 rounded min-h-[40px]">
@@ -501,7 +501,7 @@ defmodule KgkmWeb.ChatLive.Index do
               x
             </button>
           </div>
-
+          
     <!-- Elementos de Vídeo e Hook JS -->
           <div
             id="camera-container"
@@ -512,7 +512,7 @@ defmodule KgkmWeb.ChatLive.Index do
             </video>
             <canvas id="camera-canvas" class="hidden"></canvas>
           </div>
-
+          
     <!-- Botões de Ação da Câmera -->
           <div class="flex items-center justify-center gap-4 pt-2">
             <button
@@ -522,6 +522,84 @@ defmodule KgkmWeb.ChatLive.Index do
             >
               > <.icon name="hero-camera" class="w-4 h-4" /> Tirar Foto
             </button>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- MODAL DE CONVERSAS SALVAS -->
+    <%= if @show_saved_modal? do %>
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-lg max-h-[80vh] flex flex-col shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <!-- Cabeçalho do Modal -->
+          <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
+            <div class="flex items-center gap-2">
+              <div class="p-2 rounded-xl bg-amber-500/10 text-amber-500">
+                <.icon name="hero-bookmark" class="w-5 h-5" />
+              </div>
+              <h3 class="font-bold text-gray-800 dark:text-gray-100 text-base">Mensagens Salvas</h3>
+            </div>
+            <button
+              phx-click="close_saved_messages"
+              class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full transition"
+            >
+              x
+            </button>
+          </div>
+          
+    <!-- Lista Scrollável de Mensagens Salvas -->
+          <div class="flex-1 overflow-y-auto p-4 space-y-3">
+            <%= if @saved_messages == [] do %>
+              <div class="flex flex-col items-center justify-center py-12 text-gray-400 space-y-2">
+                <.icon name="hero-bookmark" class="w-10 h-10 stroke-1 opacity-50" />
+                <p class="text-xs">Nenhuma mensagem salva por enquanto</p>
+                <span class="text-[10px] text-gray-400">
+                  Clique em "Salvar / Pin" nas opções de qualquer mensagem
+                </span>
+              </div>
+            <% else %>
+              <div
+                :for={msg <- @saved_messages}
+                class="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/60 flex flex-col gap-2 hover:border-amber-500/50 transition group"
+              >
+                <!-- Infos do Ator e Data -->
+                <div class="flex justify-between items-center text-xs">
+                  <span class="font-bold text-indigo-500 dark:text-indigo-400">
+                    {msg.user.username}
+                  </span>
+                  <span class="text-[10px] text-gray-400">
+                    {Calendar.strftime(msg.inserted_at, "%d/%m/%Y às %H:%M")}
+                  </span>
+                </div>
+                
+    <!-- Conteúdo da mensagem -->
+                <p class="text-xs text-gray-700 dark:text-gray-300 break-words bg-white dark:bg-gray-900/50 p-2.5 rounded-xl border border-gray-100 dark:border-gray-800">
+                  {msg.content}
+                </p>
+                
+    <!-- Ações da Mensagem Salva -->
+                <div class="flex items-center justify-end gap-2 pt-1">
+                  <!-- Botão Copiar -->
+                  <button
+                    type="button"
+                    phx-click={JS.dispatch("copy_to_clipboard", detail: %{text: msg.content})}
+                    class="px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-200/70 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 flex items-center gap-1 transition"
+                  >
+                    <.icon name="hero-document-duplicate" class="w-3.5 h-3.5" /> Copiar
+                  </button>
+                  <!-- Botão Ir para o Chat / Responder -->
+                  <button
+                    type="button"
+                    phx-click="jump_to_saved_message"
+                    phx-value-chat-id={msg.chat_id}
+                    phx-value-msg-id={msg.id}
+                    class="px-3 py-1.5 rounded-xl text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-1 transition shadow-sm"
+                  >
+                    <.icon name="hero-arrow-uturn-left" class="w-3.5 h-3.5" /> Ir para o Chat
+                  </button>
+                </div>
+              </div>
+            <% end %>
           </div>
         </div>
       </div>
@@ -564,6 +642,8 @@ defmodule KgkmWeb.ChatLive.Index do
        max_file_size: 50_000_000
      )
      |> assign(:show_camera_modal?, false)
+     |> assign(:show_saved_modal?, false)
+     |> assign(:saved_messages, [])
      |> assign_message_form(%Message{})}
   end
 
@@ -969,5 +1049,37 @@ defmodule KgkmWeb.ChatLive.Index do
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Não foi possível enviar a foto.")}
     end
+  end
+
+  @impl true
+  def handle_event("open_saved_messages", _params, socket) do
+    scope = socket.assigns.current_scope
+    saved_msgs = Messages.list_user_saved_messages(scope)
+
+    {:noreply,
+     socket
+     |> assign(:show_saved_modal?, true)
+     |> assign(:saved_messages, saved_msgs)}
+  end
+
+  @impl true
+  def handle_event("close_saved_messages", _params, socket) do
+    {:noreply, assign(socket, :show_saved_modal?, false)}
+  end
+
+  # Ação para ir direto para o chat da mensagem salva e opcionalmente preparar resposta
+  @impl true
+  def handle_event("jump_to_saved_message", %{"chat-id" => chat_id, "msg-id" => msg_id}, socket) do
+    scope = socket.assigns.current_scope
+
+    # Fecha o modal e navega via patch para o chat correspondente
+    msg = Messages.get_message!(msg_id)
+
+    {:noreply,
+     socket
+     |> assign(:show_saved_modal?, false)
+     # Opcional: Já deixa configurado para responder essa msg
+     |> assign(:replying_to, msg)
+     |> push_patch(to: ~p"/chats/#{chat_id}")}
   end
 end
