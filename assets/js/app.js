@@ -163,6 +163,72 @@ Hooks.CameraCapture = {
   }
 }
 
+Hooks.ChatScroll = {
+  mounted() {
+    let container = this.el;
+    let scrollBottomBtn = document.getElementById("scroll-to-bottom-btn");
+
+    // Função de rolar até o fim
+    let scrollToBottom = (smooth = false) => {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: smooth ? "smooth" : "auto"
+      });
+    };
+
+    // Rola para o fim assim que o chat monta
+    scrollToBottom(false);
+
+    // Observa novas inserções no stream de mensagens
+    this.handleEvent("scroll_to_bottom", () => {
+      scrollToBottom(true);
+    });
+
+    // Controla a aparição do botão "descer para o fim" ao rolar para cima
+    container.addEventListener("scroll", () => {
+      let distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+      if (scrollBottomBtn) {
+        if (distanceFromBottom > 300) {
+          scrollBottomBtn.classList.remove("hidden");
+          scrollBottomBtn.classList.add("flex");
+        } else {
+          scrollBottomBtn.classList.add("hidden");
+          scrollBottomBtn.classList.remove("flex");
+        }
+      }
+    });
+
+    // Clique do botão flutuante para descer
+    if (scrollBottomBtn) {
+      scrollBottomBtn.addEventListener("click", () => {
+        scrollToBottom(true);
+      });
+    }
+    // Escuta o evento global para focar/rolar até uma mensagem citada
+    // Escuta evento global para focar/rolar até uma mensagem citada
+    window.addEventListener("scroll_to_message", (e) => {
+      let msgId = e.detail.msgId;
+      let targetEl = document.getElementById(`message-${msgId}`);
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        // Efeito visual de destaque (piscar)
+        targetEl.classList.add("ring-2", "ring-orange-500", "dark:ring-indigo-500", "transition-all", "duration-500");
+        setTimeout(() => {
+          targetEl.classList.remove("ring-2", "ring-orange-500", "dark:ring-indigo-500");
+        }, 2000);
+      }
+    });
+  },
+  updated() {
+    // Se o usuário estiver próximo ao final, rola automaticamente ao chegar nova mensagem
+    let container = this.el;
+    let distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    if (distanceFromBottom < 150) {
+      container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+    }
+  }
+}
+
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html"
 // Establish Phoenix Socket and LiveView configuration.
