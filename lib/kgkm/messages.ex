@@ -56,12 +56,15 @@ defmodule Kgkm.Messages do
     |> Repo.update()
   end
 
-  def list_saved_messages(chat_id) do
+  def list_user_saved_messages(%Scope{} = scope) do
+    # Busca as mensagens salvas do chat
     Message
-    |> where([m], m.chat_id == ^chat_id and m.is_saved == true)
+    |> join(:inner, [m], c in assoc(m, :chat))
+    |> join(:inner, [m, c], cm in assoc(c, :chat_members))
+    |> where([m, c, cm], cm.user_id == ^scope.user.id and m.is_saved == true)
     |> order_by([m], asc: m.inserted_at)
     |> Repo.all()
-    |> Repo.preload(:user)
+    |> Repo.preload([:user, chat: [chat_members: :user]])
   end
 
   def change_message(%Scope{} = scope, %Message{} = message, attrs \\ %{}) do
