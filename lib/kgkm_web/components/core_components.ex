@@ -641,4 +641,65 @@ defmodule KgkmWeb.CoreComponents do
     )
     |> JS.hide(to: "##{id}", transition: {"transition duration-200", "block", "hidden"})
   end
+
+  @doc """
+  Menu suspenso de ações de mensagem (Responder, Copiar, Salvar)
+  """
+  attr :msg_id, :string, required: true
+  attr :msg_content, :string, required: true
+  attr :is_me, :boolean, default: false
+
+  def msg_actions_dropdown(assigns) do
+    ~H"""
+    <div class={[
+      "dropdown relative shrink-0",
+      if(@is_me, do: "dropdown-left dropdown-end", else: "dropdown-right dropdown-start")
+    ]}>
+      <div
+        tabindex="0"
+        role="button"
+        class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer rounded-full transition-colors"
+      >
+        <.icon name="hero-ellipsis-vertical" class="w-4 h-4" />
+      </div>
+      <ul
+        tabindex="0"
+        class="dropdown-content menu z-50 p-1 shadow-2xl bg-white dark:bg-gray-800 rounded-xl w-40 border border-gray-100 dark:border-gray-700 text-xs space-y-0.5"
+      >
+        <li>
+          <button
+            type="button"
+            phx-click="set_reply"
+            phx-value-msg-id={@msg_id}
+            class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg"
+          >
+            <.icon name="hero-arrow-uturn-left" class="w-3.5 h-3.5 text-indigo-500" />
+            <span>Responder</span>
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            phx-click={JS.dispatch("copy_to_clipboard", detail: %{text: @msg_content})}
+            class="flex items-center gap-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg"
+          >
+            <.icon name="hero-document-duplicate" class="w-3.5 h-3.5 text-gray-500" />
+            <span>Copiar</span>
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            phx-click="save_message"
+            phx-value-msg-id={@msg_id}
+            class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg"
+          >
+            <.icon name="hero-bookmark" class="w-3.5 h-3.5 text-amber-500" />
+            <span>Salvar / Pin</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+    """
+  end
 end
