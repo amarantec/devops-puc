@@ -197,6 +197,77 @@ defmodule KgkmWeb.ChatLive.Index do
                       </div>
                     <% end %>
 
+    <!-- Renderiza imagem  ou arquivo se houver file_url -->
+                    <%= if msg.file_url do %>
+                      {ext = String.downcase(Path.extname(msg.file_url))}
+                      <!-- Se for IMAGEM -->
+                      <%= if ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"] do %>
+                        <div class="mb-2 rounded-2xl overflow-hidden max-w-xs cursor-pointer group/img relative">
+                          <img
+                            src={msg.file_url}
+                            class="w-full h-auto object-cover rounded-2xl transition group-hover/img:scale-105"
+                            alt="Foto anexada"
+                            onclick={"window.open('#{msg.file_url}', '_blank')"}
+                          />
+                          <a
+                            href={msg.file_url}
+                            download
+                            class="absolute bottom-2 right-2 p-1.5 bg-black/60 text-white rounded-full opacity-0 group-hover/img:opacity-100 transition shadown-lg"
+                            title="Baixar Imagem"
+                          >
+                            <.icon name="hero-arrow-down-tray" class="w-4 h-4" />
+                          </a>
+                        </div>
+
+    <!-- Se for Áudio (Música gravada ou enviada) -->
+                      <% else %>
+                        <%= if ext in [".mp3", ".wav", ".ogg"] do %>
+                          <div class="mb-2 min-w-[200px]">
+                            <audio controls class="w-full h-10">
+                              <source src={msg.file_url} /> Seu navegador não suporta áudio.
+                            </audio>
+                          </div>
+                          <!-- Se for Documento (PDF, DOCX, etc) -->
+                        <% else %>
+                          <div class="mb-2 p-3 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center justify-between gap-3 min-w[220px]">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                              <div class="p-2.5 rounded-xl bg-orange-500/10 dark:bg-indigo-500/20 text-orange-500 dark:text-indigo-400 shrink-0">
+                                <.icon name="hero-document-text" class="w-6 h-6" />
+                              </div>
+                              <div class="min-w-0">
+                                <p class="text-xs font-bold  truncate text-gray-800 dark:text-gray-200">
+                                  {Path.basename(msg.file_url)}
+                                </p>
+                                <span class="text-[10px] text-gray-400 uppercase font-semibold">
+                                  Documento
+                                </span>
+                              </div>
+                            </div>
+
+                            <div class="flex items-center gap-1 shrink-0">
+                              <!-- Abrir no Navegador -->
+                              <a
+                                href={msg.file_url}
+                                target="_blank"
+                                class="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-gray-500 transition"
+                                title="Abrir no navegador"
+                              >
+                                <.icon name="hero-arrow-top-right-on-square" class="w-4 h-4" />
+                              </a>
+                              <!-- Download Direto -->
+                              <a
+                                href={msg.file_url}
+                                download
+                                class="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-gray-500 transition"
+                                title="Baixar arquivo"
+                              >
+                                <.icon name="hero-arrow-down-tray" class="w-4 h-4" />
+                              </a>
+                            </div>
+                          </div>
+                        <% end %>
+                      <% end %>
+                    <% end %>
                     <p class="break-words">{msg.content}</p>
                     <div class="text-[9px] text-right mt-1 opacity-75">
                       {Calendar.strftime(msg.inserted_at, "%H:%M")}
@@ -231,7 +302,33 @@ defmodule KgkmWeb.ChatLive.Index do
                 </button>
               </div>
             <% end %>
-            <!-- Input de Envio de Mensagem sem bordas estranhas -->
+
+    <!-- Área de Preview do Arquivo selecionado antes de enviar -->
+            <%= for entry <- @uploads.chat_file.entries do %>
+              <div class="px-4 py-2 bg-gray-50 dark:bg-gray-800/80 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div class="flex items-center gap-2 text-xs truncate">
+                  <.icon
+                    name="hero-paper-clip"
+                    class="w-4 h-4 text-orange-500 dark:text-indigo-500 shrink-0"
+                  />
+                  <span class="font-medium truncate">{entry.client_name}</span>
+                  <span class="text-gray-400">
+                    ({Float.round(entry.client_size / 1024 / 1024, 1)} MB)
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  phx-click="cancel-upload"
+                  phx-value-ref={entry.ref}
+                  class="text-gray-400 hover:text-red-500"
+                >
+                  <.icon name="hero-x-mark" class="w-4 h-4" />
+                </button>
+              </div>
+            <% end %>
+
+    <!-- Input de Envio de Mensagem e Anexos -->
             <div class="p-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
               <.form
                 for={@form}
@@ -240,20 +337,53 @@ defmodule KgkmWeb.ChatLive.Index do
                 phx-submit="save"
                 class="flex items-center gap-2"
               >
+
+    <!-- Botão de anexar arquivos -->
+                <label class="p-2.5 rounded-full hover:bg-gray-100 dark:bg-gray-800 text-gray-500 cursor-pointer shrink-0 transition">
+                  <.icon name="hero-paper-clip" class="w-5 h-5" />
+                  <.live_file_input upload={@uploads.chat_file} class="sr-only" />
+                </label>
+                <button
+                  type="button"
+                  phx-click="open_camera_modal"
+                  class="p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 cursor-pointer shrink-0 transition"
+                  title="Tirar Foto / Vídeo"
+                >
+                  <.icon name="hero-camera" class="w-5 h-5" />
+                </button>
                 <div class="flex-1">
-                  <input
+                  <.input
                     type="text"
-                    name={@form[:content].name}
-                    value={@form[:content].value}
+                    field={@form[:content]}
                     placeholder="Escreva uma mensagem..."
                     autocomplete="off"
                     class="w-full text-sm px-4 py-2.5 rounded-full border-none bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
 
-                <.button phx-disable-with="..." variant="primary" class="!rounded-full !p-3 shrink-0">
-                  <.icon name="hero-paper-airplane" class="w-4 h-4" />
-                </.button>
+    <!-- Botão Dinâmico: Se vazio e sem arquivo -> Microfone | Se ou com arquivo -> Enviar -->
+                <%= if (@form[:content].value in [nil, ""]) && @uploads.chat_file.entries == [] do %>
+                  <button
+                    type="button"
+                    id="audio-mic-button"
+                    phx-hook="MediaRecorder"
+                    class="p-3 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition shrink-0 cursor-pointer"
+                    title="Gravar Áudio"
+                  >
+                    <.icon
+                      name="hero-microphone"
+                      class="w-5 h-5 text-orange-500 dark:text-indigo-400"
+                    />
+                  </button>
+                <% else %>
+                  <.button
+                    phx-disable-with="..."
+                    variant="primary"
+                    class="!rounded-full !p-3 shrink-0"
+                  >
+                    <.icon name="hero-paper-airplane" class="w-4 h-4" />
+                  </.button>
+                <% end %>
               </.form>
             </div>
           <% else %>
@@ -355,6 +485,47 @@ defmodule KgkmWeb.ChatLive.Index do
         </div>
       <% end %>
     </div>
+
+    <!-- MODAL DE CAPTURA DE CÂMERA -->
+    <%= if @show_camera_modal? do %>
+      <div class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-gray-900 p-4 rounded-2xl w-full max-w-lg space-y-4 shadow-2xl border border-gray-200 dark:border-gray-800">
+          <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-800 pb-2">
+            <h3 class="text-sm font-bold text-gray-800 dark:text-gray-200">
+              Tirar Foto / Gravar Vídeo
+            </h3>
+            <button
+              phx-click="close_camera_modal"
+              class="text-gray-400 hover:text-red-500 font-bold text-sm"
+            >
+              x
+            </button>
+          </div>
+
+    <!-- Elementos de Vídeo e Hook JS -->
+          <div
+            id="camera-container"
+            phx-hook="CameraCapture"
+            class="relative rounded-xl overflow-hidden bg-black aspect-video flex items-center justify-center"
+          >
+            <video id="camera-preview" autoplay playsinline muted class="w-full h-full object-cover">
+            </video>
+            <canvas id="camera-canvas" class="hidden"></canvas>
+          </div>
+
+    <!-- Botões de Ação da Câmera -->
+          <div class="flex items-center justify-center gap-4 pt-2">
+            <button
+              type="button"
+              id="capture-photo-btn"
+              class="px-4 py-2 bg-orange-500 hover:bg-orange-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white text-xs fong-bold rounded-xl shadow transition flex items-center gap-2 cursor-pointer"
+            >
+              > <.icon name="hero-camera" class="w-4 h-4" /> Tirar Foto
+            </button>
+          </div>
+        </div>
+      </div>
+    <% end %>
     """
   end
 
@@ -386,6 +557,13 @@ defmodule KgkmWeb.ChatLive.Index do
      |> assign(:group_search_results, [])
      |> assign(:selected_group_members, [])
      |> assign(:replying_to, nil)
+     |> allow_upload(:chat_file,
+       accept: ~w(.jpg .jpeg .png .pdf .doc  .docx .mp3 .wav .mp4),
+       max_entries: 1,
+       # Ex: até 50mb
+       max_file_size: 50_000_000
+     )
+     |> assign(:show_camera_modal?, false)
      |> assign_message_form(%Message{})}
   end
 
@@ -566,8 +744,10 @@ defmodule KgkmWeb.ChatLive.Index do
         %Message{},
         message_params
       )
+      # Mantém os parâmetros ativos no form para o input não limpar o texto
+      |> Map.put(:action, :validate)
 
-    {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
+    {:noreply, assign(socket, form: to_form(changeset))}
   end
 
   @impl true
@@ -576,24 +756,42 @@ defmodule KgkmWeb.ChatLive.Index do
     chat_id = socket.assigns.active_chat.id
     replying_to = socket.assigns.replying_to
 
-    # Adiciona o chat_id e o reply_to_id se houver mensagem sendo respondida
-    message_params =
+    # consome o arquivo carregado (se houver)
+    file_url =
+      consume_uploaded_entries(socket, :chat_file, fn %{path: path}, entry ->
+        dest_dir = Path.join([:code.priv_dir(:kgkm), "static", "uploads"])
+        File.mkdir_p!(dest_dir)
+
+        ext = Path.extname(entry.client_name)
+        filename = "chat-file-#{System.unique_integer([:positive])}#{ext}"
+        dest_path = Path.join(dest_dir, filename)
+
+        File.cp!(path, dest_path)
+        {:ok, "/uploads/#{filename}"}
+      end)
+      |> List.first()
+
+    # Monta os parâmetros finais juntando chat_id, file_url e reply_to_id
+    final_params =
       message_params
       |> Map.put("chat_id", chat_id)
+      |> then(fn params ->
+        if file_url, do: Map.put(params, "file_url", file_url), else: params
+      end)
       |> then(fn params ->
         if replying_to, do: Map.put(params, "reply_to_id", replying_to.id), else: params
       end)
 
-    case Messages.create_message(scope, message_params) do
+    case Messages.create_message(scope, final_params) do
       {:ok, _message} ->
         {:noreply,
          socket
          # Limpa a caixa de resposta acoplada
          |> assign(:replying_to, nil)
-         |> assign_message_form(%Message{chat_id: socket.assigns.active_chat.id})}
+         |> assign_message_form(%Message{chat_id: chat_id})}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+        {:noreply, assign(socket, form: to_form(changeset, action: :insert))}
     end
   end
 
@@ -697,6 +895,79 @@ defmodule KgkmWeb.ChatLive.Index do
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Não foi possível salvar a mensagem")}
+    end
+  end
+
+  @impl true
+  def handle_event("save_recorded_audio", %{"audio_data" => audio_data}, socket) do
+    scope = socket.assigns.current_scope
+    chat_id = socket.assigns.active_chat.id
+
+    # Remove o cabeçalho base64 do data URL (ex: "data:audio/ogg; codecs=opus;base64,")
+    [header, encoded] = String.split(audio_data, ",")
+    binary_data = Base.decode64!(encoded)
+
+    # Define o diretório de destino em priv/static/uploads
+    dest_dir = Path.join([:code.priv_dir(:kgkm), "static", "uploads"])
+    File.mkdir_p!(dest_dir)
+    filename = "audio-#{System.unique_integer([:positive])}.ogg"
+    dest_path = Path.join(dest_dir, filename)
+
+    # Salva o arquivo no disco
+    File.write!(dest_path, binary_data)
+    file_url = "/uploads/#{filename}"
+
+    # Cria a mensagem associada ao chat contento o audio gravado
+    case Messages.create_message(scope, %{
+           chat_id: chat_id,
+           content: "voice message",
+           file_url: file_url
+         }) do
+      {:ok, _message} ->
+        {:noreply, socket}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Não foi possível enviar o áudio.")}
+    end
+  end
+
+  @impl true
+  def handle_event("open_camera_modal", _params, socket) do
+    {:noreply, assign(socket, :show_camera_modal?, true)}
+  end
+
+  @impl true
+  def handle_event("close_camera_modal", _params, socket) do
+    {:noreply, assign(socket, :show_camera_modal?, false)}
+  end
+
+  @impl true
+  def handle_event("save_captured_image", %{"image_data" => image_data}, socket) do
+    scope = socket.assigns.current_scope
+    chat_id = socket.assigns.active_chat.id
+
+    # Decodifica o base64 da foto tirada
+    [header, encoded] = String.split(image_data, ",")
+    binary_data = Base.decode64!(encoded)
+    dest_dir = Path.join([:code.priv_dir(:kgkm), "static", "uploads"])
+    File.mkdir_p!(dest_dir)
+
+    filename = "photo-#{System.unique_integer([:positive])}.jpg"
+    dest_path = Path.join(dest_dir, filename)
+
+    File.write!(dest_path, binary_data)
+    file_url = "/uploads/#{filename}"
+
+    case Messages.create_message(scope, %{
+           chat_id: chat_id,
+           content: "Foto tirada",
+           file_url: file_url
+         }) do
+      {:ok, _message} ->
+        {:noreply, assign(socket, :show_camera_modal?, false)}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Não foi possível enviar a foto.")}
     end
   end
 end
