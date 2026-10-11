@@ -23,7 +23,7 @@ defmodule Kgkm.Messages do
     |> where([m], m.chat_id == ^chat_id)
     |> order_by([m], asc: m.inserted_at)
     |> Repo.all()
-    |> Repo.preload(:user)
+    |> Repo.preload([:user, reply_to: :user])
   end
 
   def create_message(%Scope{} = scope, attrs) do
@@ -32,7 +32,7 @@ defmodule Kgkm.Messages do
     |> Repo.insert()
     |> case do
       {:ok, message} ->
-        message = Repo.preload(message, :user)
+        message = Repo.preload(message, [:user, reply_to: :user])
         # Notifica apenas quem está escutando este chat
         broadcast_chat_message(message.chat_id, {:created, message})
         {:ok, message}
@@ -40,6 +40,28 @@ defmodule Kgkm.Messages do
       error ->
         error
     end
+  end
+
+  def get_message!(id) do
+    Message
+    |> Repo.get!(id)
+    |> Repo.preload([:user, reply_to: :user])
+  end
+
+  def save_message(message_id) do
+    message = Repo.get!(Message, message_id)
+
+    message
+    |> Ecto.Changeset.change(%{is_saved: true})
+    |> Repo.update()
+  end
+
+  def list_saved_messages(chat_id) do
+    Message
+    |> where([m], m.chat_id == ^chat_id and m.is_saved == true)
+    |> order_by([m], asc: m.inserted_at)
+    |> Repo.all()
+    |> Repo.preload(:user)
   end
 
   def change_message(%Scope{} = scope, %Message{} = message, attrs \\ %{}) do
