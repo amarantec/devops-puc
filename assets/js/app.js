@@ -37,7 +37,109 @@ window.addEventListener("copy_to_clipboard", (e) => {
     navigator.clipboard.writeText(e.detail.text);
   }
 });
+Hooks.MediaRecorder = {
+  mounted() {
+    let mediaRecorder;
+    let audioChunks = [];
+    let isRecording = false;
 
+    this.el.addEventListener("click", async () => {
+      try {
+        if (!isRecording) {
+          // Iniciar Gravação
+          let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+          };
+
+          mediaRecorder.onstop = () => {
+            let audioBlob = new Blob(audioChunks, { type: 'audio/ogg; codecs=opus' });
+            let reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = () => {
+              let base64data = reader.result;
+              // Envia o áudio gravado em base64 de volta para o LiveView
+              this.pushEvent("save_recorded_audio", { audio_data: base64data });
+            };
+
+            // Para as tracks de áudio liberando o microfone no navegador
+            stream.getTracks().forEach(track => track.stop());
+          };
+
+          mediaRecorder.start();
+          isRecording = true;
+          this.el.classList.add("bg-red-500", "text-white", "animate-pulse");
+          this.el.title = "Gravando... Clique para parar";
+        } else {
+          // Parar Gravação
+          if (mediaRecorder) {
+            mediaRecorder.stop();
+          }
+          isRecording = false;
+          this.el.classList.remove("bg-red-500", "text-white", "animate-pulse");
+          this.el.title = "Gravar Áudio";
+        }
+      } catch (err) {
+        console.error("Erro ao acessar o microfone:", err);
+        alert("Não foi possível acessar o microfone. Verifique as permissões do navegador.");
+      }
+    });
+  }
+}
+
+Hooks.CameraCapture = {
+  mounted() {
+    let videoEl = this.el.querySelector("#video-preview") || this.el.querySelector("video");
+    let canvasEl = this.el.querySelector("#camera-canvas");
+    let captureBtn = document.getElementById("capture-photo-btn");
+    let mediaStream = null;
+
+    // Inicializa a câmera assim que o modal abre
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      .then(stream => {
+        mediaStream = stream;
+        if (videoEl) {
+          videoEl.srcObject = stream;
+        }
+      })
+      .catch(err => {
+        console.error("Erro ao acessar a câmera:", err);
+        alert("Não foi possível acessar a câmera do dispositivo.");
+      });
+
+    // Capturar Foto
+    if (captureBtn) {
+      captureBtn.addEventListener("click", () => {
+        if (!videoEl) return;
+        let context = canvasEl.getContext("2d");
+        canvasEl.width = videoEl.videoWidth || 640;
+        canvasEl.height = videoEl.videoHeight || 480;
+        context.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
+
+        let base64data = canvasEl.toDataURL("image/jpeg", 0.9);
+
+        // Para a stream da câmera
+        if (mediaStream) {
+          mediaStream.getTracks().forEach(track => track.stop());
+        }
+
+        // Envia a imagem capturada para o LiveView
+        this.pushEvent("save_captured_image", { image_data: base64data });
+      });
+    }
+
+    // Guarda a stream para poder desligar se o componente desmontar
+    this.mediaStream = mediaStream;
+  },
+  destroyed() {
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach(track => track.stop());
+    }
+  }
+}
 
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html"
