@@ -32,6 +32,12 @@ Hooks.PageTitle = {
   }
 }
 
+window.addEventListener("copy_to_clipboard", (e) => {
+  if (e.detail && e.detail.text) {
+    navigator.clipboard.writeText(e.detail.text);
+  }
+});
+
 
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html"
