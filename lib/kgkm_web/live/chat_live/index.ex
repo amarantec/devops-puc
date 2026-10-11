@@ -165,13 +165,14 @@ defmodule KgkmWeb.ChatLive.Index do
     <!-- Feed de Mensages (Stream) -->
             <div
               id="messages-feed"
+              phx-hook="ChatScroll"
               phx-update="stream"
               class="flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col space-y-2"
             >
               <div class="chat-date-badge">Hoje</div>
               <div
                 :for={{dom_id, msg} <- @streams.messages}
-                id={dom_id}
+                id={"message-#{msg.id}"}
                 class={"flex flex-col group relative #{if msg.user_id == @current_scope.user.id, do: "items-end", else: "items-start"}"}
               >
                 <%= if msg.user_id != @current_scope.user.id do %>
@@ -190,8 +191,11 @@ defmodule KgkmWeb.ChatLive.Index do
                       else: "msg-bubble-received"
                   }>
                     <!-- Se a mensagem for uma resposta a outra, exibe o bloco citado -->
-                    <%= if Map.get(msg, :reply_to) do %>
-                      <div class="mb-1.5 p-1.5 rounded-lg bg-black/10 dark:bg-white/10 border-l-2 border-orange-400 dark:border-indigo-400 text-xs">
+                    <%= if Map.get(msg, :reply_to) && msg.reply_to do %>
+                      <div
+                        class="mb-1.5 p-1.5 rounded-lg bg-black/10 dark:bg-white/10 border-l-2 border-orange-400 dark:border-indigo-400 text-xs cursor-pointer hover:bg-black/15 dark:hover:bg-white/15 transition"
+                        onclick={"window.dispatchEvent(new CustomEvent('scroll_to_message', { detail: { msgId: '#{msg.reply_to.id}' } }))"}
+                      >
                         <p class="font-bold opacity-90">{msg.reply_to.user.username}</p>
                         <p class="truncate opacity-75">{msg.reply_to.content}</p>
                       </div>
@@ -212,7 +216,7 @@ defmodule KgkmWeb.ChatLive.Index do
                           <a
                             href={msg.file_url}
                             download
-                            class="absolute bottom-2 right-2 p-1.5 bg-black/60 text-white rounded-full opacity-0 group-hover/img:opacity-100 transition shadown-lg"
+                            class="absolute bottom-2 right-2 p-1.5 bg-black/60 text-white rounded-full opacity-0 group-hover/img:opacity-100 transition shadow-lg"
                             title="Baixar Imagem"
                           >
                             <.icon name="hero-arrow-down-tray" class="w-4 h-4" />
@@ -328,7 +332,18 @@ defmodule KgkmWeb.ChatLive.Index do
               </div>
             <% end %>
             
-    <!-- Input de Envio de Mensagem e Anexos -->
+    <!-- Botão flutuante para descer ao fim do chat -->
+            <div class="absolute bottom-20 right-6 z-20">
+              <button
+                type="button"
+                id="scroll-to-bottom-btn"
+                class="hidden items-center justify-center p-3 rounded-full bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-200 shadow-xl border border-gray-200 dark:border-gray-700 hover:scale-105 transition cursor-pointer"
+                title="Ir para mensagens recentes"
+              >
+                <.icon name="hero-arrow-down" class="w-5 h-5 text-orange-500 dark:text-indigo-400" />
+              </button>
+            </div>
+            <!-- Input de Envio de Mensagem e Anexos -->
             <div class="p-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
               <.form
                 for={@form}
@@ -518,7 +533,7 @@ defmodule KgkmWeb.ChatLive.Index do
             <button
               type="button"
               id="capture-photo-btn"
-              class="px-4 py-2 bg-orange-500 hover:bg-orange-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white text-xs fong-bold rounded-xl shadow transition flex items-center gap-2 cursor-pointer"
+              class="px-4 py-2 bg-orange-500 hover:bg-orange-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow transition flex items-center gap-2 cursor-pointer"
             >
               > <.icon name="hero-camera" class="w-4 h-4" /> Tirar Foto
             </button>
@@ -613,7 +628,7 @@ defmodule KgkmWeb.ChatLive.Index do
 
     chats =
       Chats.list_user_chats(scope)
-      |> Enum.map(&Map.put(&1, :unread_count, 0))
+      |> Enum.map(&Map.put_new(&1, :unread_count, 0))
 
     if connected?(socket) do
       # Inscreve o usuário em TODOS os chats dele para escutar mensagens em background
@@ -669,6 +684,7 @@ defmodule KgkmWeb.ChatLive.Index do
     # Zera as mensagens não lidas do chat aberto
     updated_chats =
       Enum.map(socket.assigns.chats, fn c ->
+        c = Map.put_new(c, :unread_count, 0)
         if c.id == chat_id, do: %{c | unread_count: 0}, else: c
       end)
 
