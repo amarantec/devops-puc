@@ -35,5 +35,4 @@ kgkm-*.tar
 npm-debug.log
 /assets/node_modules/
 .env
-shell/
 priv/static/uploads/
