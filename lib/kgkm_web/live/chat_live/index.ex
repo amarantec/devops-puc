@@ -166,31 +166,72 @@ defmodule KgkmWeb.ChatLive.Index do
             <div
               id="messages-feed"
               phx-update="stream"
-              class="flex-1 p-4 overflow-y-auto flex flex-col space-y-2"
+              class="flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col space-y-2"
             >
               <div class="chat-date-badge">Hoje</div>
               <div
                 :for={{dom_id, msg} <- @streams.messages}
                 id={dom_id}
-                class={"flex flex-col #{if msg.user_id == @current_scope.user.id, do: "items-end", else: "items-start"}"}
+                class={"flex flex-col group relative #{if msg.user_id == @current_scope.user.id, do: "items-end", else: "items-start"}"}
               >
                 <%= if msg.user_id != @current_scope.user.id do %>
                   <span class="text-[10px] text-gray-400 ml-2 mb-0.5">{msg.user.username}</span>
                 <% end %>
-                <div class={
-                  if msg.user_id == @current_scope.user.id,
-                    do: "msg-bubble-sent",
-                    else: "msg-bubble-received"
-                }>
-                  <p class="break-word">{msg.content}</p>
-                  <div class="text-[9px] text-right mt-1 opacity-75">
-                    {Calendar.strftime(msg.inserted_at, "%H:%M")}
+
+                <div class="flex items-center gap-1.5 max-w-[85%] md:max-w-md">
+                  <!-- Se for mensagem enviada por mim, o menu de ações fica à esquerda do balão -->
+                  <%= if msg.user_id == @current_scope.user.id do %>
+                    <.msg_actions_dropdown msg_id={msg.id} msg_content={msg.content} is_me={true} />
+                  <% end %>
+
+                  <div class={
+                    if msg.user_id == @current_scope.user.id,
+                      do: "msg-bubble-sent",
+                      else: "msg-bubble-received"
+                  }>
+                    <!-- Se a mensagem for uma resposta a outra, exibe o bloco citado -->
+                    <%= if Map.get(msg, :reply_to) do %>
+                      <div class="mb-1.5 p-1.5 rounded-lg bg-black/10 dark:bg-white/10 border-l-2 border-orange-400 dark:border-indigo-400 text-xs">
+                        <p class="font-bold opacity-90">{msg.reply_to.user.username}</p>
+                        <p class="truncate opacity-75">{msg.reply_to.content}</p>
+                      </div>
+                    <% end %>
+
+                    <p class="break-words">{msg.content}</p>
+                    <div class="text-[9px] text-right mt-1 opacity-75">
+                      {Calendar.strftime(msg.inserted_at, "%H:%M")}
+                    </div>
                   </div>
+
+    <!-- Se for mensagem recebida, o menu de ações fica à direita -->
+                  <%= if msg.user_id != @current_scope.user.id do %>
+                    <.msg_actions_dropdown msg_id={msg.id} msg_content={msg.content} is_me={false} />
+                  <% end %>
                 </div>
               </div>
             </div>
 
-    <!-- Input de Envio de Mensagem sem bordas estranhas -->
+    <!-- Caixinha de Citação/Resposta -->
+
+            <%= if @replying_to do %>
+              <div class="px-4 py-2 bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div class="flex items-center gap-2 border-l-2 border-orange-500 dark:border-indigo-500 pl-2 text-xs min-w-0">
+                  <div>
+                    <p class="font-bold text-orange-500 dark:text-indigo-500">
+                      Respondendo a {@replying_to.user.username}
+                    </p>
+                    <p class="text-gray-500 dark:text-gray-400 truncate">{@replying_to.content}</p>
+                  </div>
+                </div>
+                <button
+                  phx-click="cancel_reply"
+                  class="text-gray-400 hover:text-gray-600 font-bold text-sm"
+                >
+                  x
+                </button>
+              </div>
+            <% end %>
+            <!-- Input de Envio de Mensagem sem bordas estranhas -->
             <div class="p-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
               <.form
                 for={@form}
@@ -344,6 +385,7 @@ defmodule KgkmWeb.ChatLive.Index do
      |> assign(:show_group_modal?, false)
      |> assign(:group_search_results, [])
      |> assign(:selected_group_members, [])
+     |> assign(:replying_to, nil)
      |> assign_message_form(%Message{})}
   end
 
@@ -532,12 +574,23 @@ defmodule KgkmWeb.ChatLive.Index do
   def handle_event("save", %{"message" => message_params}, socket) do
     scope = socket.assigns.current_scope
     chat_id = socket.assigns.active_chat.id
+    replying_to = socket.assigns.replying_to
 
-    message_params = Map.put(message_params, "chat_id", chat_id)
+    # Adiciona o chat_id e o reply_to_id se houver mensagem sendo respondida
+    message_params =
+      message_params
+      |> Map.put("chat_id", chat_id)
+      |> then(fn params ->
+        if replying_to, do: Map.put(params, "reply_to_id", replying_to.id), else: params
+      end)
 
     case Messages.create_message(scope, message_params) do
       {:ok, _message} ->
-        {:noreply, assign_message_form(socket, %Message{chat_id: socket.assigns.active_chat.id})}
+        {:noreply,
+         socket
+         # Limpa a caixa de resposta acoplada
+         |> assign(:replying_to, nil)
+         |> assign_message_form(%Message{chat_id: socket.assigns.active_chat.id})}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -619,6 +672,31 @@ defmodule KgkmWeb.ChatLive.Index do
         avatar_url: avatar_url,
         initials: initials
       }
+    end
+  end
+
+  # Eventos de resposta as mensagens
+  @impl true
+  def handle_event("set_reply", %{"msg-id" => msg_id}, socket) do
+    # Busca a mensagem do banco ou da memória para exibir os dados de resposta
+    msg = Messages.get_message!(msg_id)
+    {:noreply, assign(socket, :replying_to, msg)}
+  end
+
+  @impl true
+  def handle_event("cancel_reply", _params, socket) do
+    {:noreply, assign(socket, :replying_to, nil)}
+  end
+
+  @impl true
+  def handle_event("save_message", %{"msg-id" => msg_id}, socket) do
+    # Lógica para salvar na conversa "Saved Messages" do próprio usuário
+    case Kgkm.Messages.save_message(msg_id) do
+      {:ok, _} ->
+        {:noreply, put_flash(socket, :info, "Mensagem salva com sucesso!")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Não foi possível salvar a mensagem")}
     end
   end
 end
