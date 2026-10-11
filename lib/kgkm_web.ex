@@ -17,7 +17,8 @@ defmodule KgkmWeb do
   those modules here.
   """
 
-  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt manifest.json service-worker.js uploads)
+  def static_paths,
+    do: ~w(assets fonts images favicon.ico robots.txt manifest.json service-worker.js uploads)
 
   def router do
     quote do
