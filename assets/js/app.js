@@ -229,6 +229,63 @@ Hooks.ChatScroll = {
   }
 }
 
+
+window.addEventListener("phx:city-resolved", (e) => {
+  if (e.detail && e.datail.city) {
+    sessionStorage.setItem(
+      "current_city",
+      e.detail.city
+    );
+  }
+});
+
+Hooks.GetLocation = {
+  mounted() {
+    const hook = this;
+
+    // 1. Ouve o evento vindo do LiveView quando o Nominatim resolve a cidade
+    hook.handleEvent("city-resolved", ({ city }) => {
+      localStorage.setItem("current_city", city);
+    });
+
+    // 2. Ouve solicitação manual para resetar via GPS
+    hook.handleEvent("request-gps", () => {
+      this.getGPSPosition();
+    });
+
+    // 3. Verifica cache no localStorage
+    const savedCity = localStorage.getItem("current_city");
+    if (savedCity) {
+      hook.pushEventTo(hook.el, "location-resolved", { city: savedCity });
+      return;
+    }
+
+    // 4. Se não há cache, chama Geolocation do navegador
+    this.getGPSPosition();
+  },
+
+  getGPSPosition() {
+    const hook = this;
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          hook.pushEventTo(hook.el, "location-resolved", {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          hook.pushEventTo(hook.el, "location-failed", { reason: error.message });
+        },
+        { timeout: 10000, maximumAge: 600000 } // Cache do navegador por 10 min
+      );
+    } else {
+      hook.pushEventTo(hook.el, "location-failed", { reason: "Não suportado" });
+    }
+  }
+};
+
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html"
 // Establish Phoenix Socket and LiveView configuration.
