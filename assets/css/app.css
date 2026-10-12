@@ -110,19 +110,9 @@
 
 /* assets/css/app.css */
 
-/* Estrutura Principal Fullscreen (Estilo Telegram Web) */
-@utility chat-layout {
-  @apply flex h-screen w-full overflow-hidden bg-white dark:bg-gray-900;
-}
-
-/* Sidebar */
-@utility chat-sidebar {
-  @apply w-80 md:w-96 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col relative shrink-0;
-}
-
 /* Balões de Mensagem Estilo Telegram */
 @utility msg-bubble-sent {
-  @apply max-w-xs md:max-w-md p-3 rounded-2xl rounded-tr-none bg-indigo-600 text-white shadow-sm self-end text-sm;
+  @apply max-w-xs md:max-w-md p-3 rounded-2xl rounded-tr-none bg-orange-500 dark:bg-indigo-500 text-white shadow-sm self-end text-sm;
 }
 
 @utility msg-bubble-received {
@@ -136,5 +126,74 @@
 
 /* Avatares Redondos */
 @utility user-avatar {
-  @apply w-10 h-10 rounded-full bg-indigo-500/20 text-indigo-600 dark:bg-indigo-400 font-bold flex items-center justify-center uppercase text-sm shrink-0;
+  @apply w-10 h-10 rounded-full bg-orange-500/20 dark:bg-indigo-500/20 text-orange-600 dark:text-indigo-600  font-bold flex items-center justify-center uppercase text-sm shrink-0;
+}
+
+/* Container raiz que preenche perfeitamente o espaço do app e trava o scroll global */
+@utility chat-container-layout {
+  @apply flex absolute inset-0 w-full h-full overflow-hidden bg-white dark:bg-gray-900;
+}
+
+/* Sidebar responsiva: No mobile ocupa 100% (hidden se houver active_chat), no desktop vira fixa (w-80) */
+@utility chat-sidebar-responsive {
+  @apply w-full md:w-80 lg:w-96 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col shrink-0 h-full overflow-hidden;
+}
+
+/* Área principal do chat responsiva: No mobile ocupa 100% (hidden se NÃO houver active_chat), no desktop flex-1 */
+@utility chat-main-responsive {
+  @apply flex-1 flex flex-col justify-between bg-gray-100/60 dark:bg-gray-950 relative h-full overflow-hidden w-full;
+}
+/* Cabeçalho do Usuário, Botão Menu DropDown e Search Bar */
+@utility chat-header {
+  @apply p-3 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2 bg-white dark:bg-gray-900;
+}
+
+@utility chat-input-message {
+  @apply w-full text-sm px-4 py-2.5 rounded-full border-none bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-indigo-500;
+}
+
+@utility audio-mic-button {
+  @apply p-3 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition shrink-0 cursor-pointer;
+}
+
+@utility send-message-button {
+  @apply p-3 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition shrink-0 cursor-pointer;
+}
+
+/* --- ESTILOS DE MODAIS --- */
+@utility modal-backdrop {
+  @apply fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4;
+}
+
+@utility modal-container {
+  @apply bg-white dark:bg-gray-900 rounded-3xl w-full max-w-lg shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col;
+}
+
+@utility modal-header {
+  @apply px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50;
+}
+
+@utility modal-body {
+  @apply p-6 space-y-4 overflow-y-auto max-h-[70vh];
+}
+
+@utility reply-message {
+  @apply mb-1.5 p-1.5 rounded-lg bg-black/10 dark:bg-white/10 border-l-2 border-orange-400 dark:border-indigo-400 text-xs cursor-pointer hover:bg-black/15 dark:hover:bg-white/15 transition;
+}
+
+@utility scroll-fab-btn {
+  @apply flex items-center justify-center p-3 rounded-full bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-200 shadow-xl border border-gray-200 dark:border-gray-700 hover:scale-105 transition cursor-pointer;
+}
+
+@utility chat-menu-btn {
+  @apply p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition cursor-pointer;
+}
+
+@utility search-user-input {
+  @apply w-full text-sm pl-9 pr-4 py-1.5 rounded-full border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-orange-500 dark:focus:ring-indigo-500;
+}
+
+/* Subcabeçalho da conversa */
+@utility chat-subheader {
+  @apply p-3 border-b bg-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center gap-3 z-10 shrink-0;
 }
