@@ -39,13 +39,13 @@ defmodule KgkmWeb.CoreComponents do
       <.flash kind={:info} flash={@flash} />
       <.flash kind={:info} phx-mounted={show("#flash")}>Welcome Back!</.flash>
   """
-  attr :id, :string, doc: "the optional id of flash container"
-  attr :flash, :map, default: %{}, doc: "the map of flash messages to display"
-  attr :title, :string, default: nil
-  attr :kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup"
-  attr :rest, :global, doc: "the arbitrary HTML attributes to add to the flash container"
+  attr(:id, :string, doc: "the optional id of flash container")
+  attr(:flash, :map, default: %{}, doc: "the map of flash messages to display")
+  attr(:title, :string, default: nil)
+  attr(:kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup")
+  attr(:rest, :global, doc: "the arbitrary HTML attributes to add to the flash container")
 
-  slot :inner_block, doc: "the optional inner block that renders the flash message"
+  slot(:inner_block, doc: "the optional inner block that renders the flash message")
 
   def flash(assigns) do
     assigns = assign_new(assigns, :id, fn -> "flash-#{assigns.kind}" end)
@@ -88,10 +88,10 @@ defmodule KgkmWeb.CoreComponents do
       <.button phx-click="go" variant="primary">Send!</.button>
       <.button navigate={~p"/"}>Home</.button>
   """
-  attr :rest, :global, include: ~w(href navigate patch method download name value disabled)
-  attr :class, :string
-  attr :variant, :string, values: ~w(primary)
-  slot :inner_block, required: true
+  attr(:rest, :global, include: ~w(href navigate patch method download name value disabled))
+  attr(:class, :string)
+  attr(:variant, :string, values: ~w(primary))
+  slot(:inner_block, required: true)
 
   def button(%{rest: rest} = assigns) do
     variants = %{"primary" => "btn-primary", nil => "btn-primary btn-soft"}
@@ -142,30 +142,33 @@ defmodule KgkmWeb.CoreComponents do
       <.input field={@form[:email]} type="email" />
       <.input name="my-input" errors={["oh no!"]} />
   """
-  attr :id, :any, default: nil
-  attr :name, :any
-  attr :label, :string, default: nil
-  attr :value, :any
+  attr(:id, :any, default: nil)
+  attr(:name, :any)
+  attr(:label, :string, default: nil)
+  attr(:value, :any)
 
-  attr :type, :string,
+  attr(:type, :string,
     default: "text",
     values: ~w(checkbox color date datetime-local email file month number password
                search select tel text textarea time url week)
+  )
 
-  attr :field, Phoenix.HTML.FormField,
+  attr(:field, Phoenix.HTML.FormField,
     doc: "a form field struct retrieved from the form, for example: @form[:email]"
+  )
 
-  attr :errors, :list, default: []
-  attr :checked, :boolean, doc: "the checked flag for checkbox inputs"
-  attr :prompt, :string, default: nil, doc: "the prompt for select inputs"
-  attr :options, :list, doc: "the options to pass to Phoenix.HTML.Form.options_for_select/2"
-  attr :multiple, :boolean, default: false, doc: "the multiple flag for select inputs"
-  attr :class, :string, default: nil, doc: "the input class to use over defaults"
-  attr :error_class, :string, default: nil, doc: "the input error class to use over defaults"
+  attr(:errors, :list, default: [])
+  attr(:checked, :boolean, doc: "the checked flag for checkbox inputs")
+  attr(:prompt, :string, default: nil, doc: "the prompt for select inputs")
+  attr(:options, :list, doc: "the options to pass to Phoenix.HTML.Form.options_for_select/2")
+  attr(:multiple, :boolean, default: false, doc: "the multiple flag for select inputs")
+  attr(:class, :string, default: nil, doc: "the input class to use over defaults")
+  attr(:error_class, :string, default: nil, doc: "the input error class to use over defaults")
 
-  attr :rest, :global,
+  attr(:rest, :global,
     include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
                 multiple pattern placeholder readonly required rows size step)
+  )
 
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
     errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
@@ -282,9 +285,9 @@ defmodule KgkmWeb.CoreComponents do
   @doc """
   Renders a header with title.
   """
-  slot :inner_block, required: true
-  slot :subtitle
-  slot :actions
+  slot(:inner_block, required: true)
+  slot(:subtitle)
+  slot(:actions)
 
   def header(assigns) do
     ~H"""
@@ -312,20 +315,21 @@ defmodule KgkmWeb.CoreComponents do
         <:col :let={user} label="username">{user.username}</:col>
       </.table>
   """
-  attr :id, :string, required: true
-  attr :rows, :list, required: true
-  attr :row_id, :any, default: nil, doc: "the function for generating the row id"
-  attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
+  attr(:id, :string, required: true)
+  attr(:rows, :list, required: true)
+  attr(:row_id, :any, default: nil, doc: "the function for generating the row id")
+  attr(:row_click, :any, default: nil, doc: "the function for handling phx-click on each row")
 
-  attr :row_item, :any,
+  attr(:row_item, :any,
     default: &Function.identity/1,
     doc: "the function for mapping each row before calling the :col and :action slots"
+  )
 
   slot :col, required: true do
-    attr :label, :string
+    attr(:label, :string)
   end
 
-  slot :action, doc: "the slot for showing user actions in the last table column"
+  slot(:action, doc: "the slot for showing user actions in the last table column")
 
   def table(assigns) do
     assigns =
@@ -376,7 +380,7 @@ defmodule KgkmWeb.CoreComponents do
       </.list>
   """
   slot :item, required: true do
-    attr :title, :string, required: true
+    attr(:title, :string, required: true)
   end
 
   def list(assigns) do
@@ -410,8 +414,8 @@ defmodule KgkmWeb.CoreComponents do
       <.icon name="hero-x-mark" />
       <.icon name="hero-arrow-path" class="ml-1 size-3 motion-safe:animate-spin" />
   """
-  attr :name, :string, required: true
-  attr :class, :string, default: "size-4"
+  attr(:name, :string, required: true)
+  attr(:class, :string, default: "size-4")
 
   def icon(%{name: "hero-" <> _} = assigns) do
     ~H"""
@@ -488,18 +492,18 @@ defmodule KgkmWeb.CoreComponents do
       </:item>
     </.dropdown>
   """
-  attr :id, :string, required: true
-  attr :class, :string, default: nil
+  attr(:id, :string, required: true)
+  attr(:class, :string, default: nil)
 
-  slot :trigger, required: true
+  slot(:trigger, required: true)
 
   slot :item do
-    attr :navigate, :string
-    attr :patch, :string
-    attr :href, :string
-    attr :method, :string
-    attr :class, :string
-    attr :"phx-click", :string
+    attr(:navigate, :string)
+    attr(:patch, :string)
+    attr(:href, :string)
+    attr(:method, :string)
+    attr(:class, :string)
+    attr(:"phx-click", :string)
   end
 
   def dropdown(assigns) do
@@ -544,9 +548,9 @@ defmodule KgkmWeb.CoreComponents do
   end
 
   # --- COMPONENTE AUXILIAR PARA ITENS DE MENU ---
-  attr :icon, :string, required: true
-  attr :title, :string, required: true
-  attr :navigate, :string, default: nil
+  attr(:icon, :string, required: true)
+  attr(:title, :string, required: true)
+  attr(:navigate, :string, default: nil)
 
   def settings_menu_item(assigns) do
     ~H"""
@@ -571,10 +575,10 @@ defmodule KgkmWeb.CoreComponents do
   end
 
   # --- COMPONENT MODAL ---
-  attr :id, :string, required: true
-  attr :show, :boolean, default: false
-  attr :on_cancel, :any, default: nil
-  slot :inner_block, required: true
+  attr(:id, :string, required: true)
+  attr(:show, :boolean, default: false)
+  attr(:on_cancel, :any, default: nil)
+  slot(:inner_block, required: true)
 
   def custom_modal(assigns) do
     ~H"""
@@ -645,9 +649,9 @@ defmodule KgkmWeb.CoreComponents do
   @doc """
   Menu suspenso de ações de mensagem (Responder, Copiar, Salvar)
   """
-  attr :msg_id, :string, required: true
-  attr :msg_content, :string, required: true
-  attr :is_me, :boolean, default: false
+  attr(:msg_id, :string, required: true)
+  attr(:msg_content, :string, required: true)
+  attr(:is_me, :boolean, default: false)
 
   def msg_actions_dropdown(assigns) do
     ~H"""
@@ -699,6 +703,240 @@ defmodule KgkmWeb.CoreComponents do
           </button>
         </li>
       </ul>
+    </div>
+    """
+  end
+
+  @doc """
+  Modal de Criação de Grupo.
+  """
+  attr(:show, :boolean, default: false)
+  attr(:group_search_results, :list, default: [])
+  attr(:selected_group_members, :list, default: [])
+
+  def group_modal(assigns) do
+    ~H"""
+    <div class={["modal-backdrop", if(!@show, do: "hidden")]}>
+      <div class="modal-container max-w-md">
+        <div class="modal-header">
+          <div class="flex items-center gap-2">
+            <div class="p-2 rounded-xl bg-indigo-500/10 text-indigo-500">
+              <.icon name="hero-user-group" class="w-5 h-5" />
+            </div>
+            <h3 class="font-bold text-gray-800 dark:text-gray-100 text-base">Criar Novo Grupo</h3>
+          </div>
+          <button type="button" phx-click="close_group_modal" class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full transition cursor-pointer">
+            ✕
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <.form for={%{}} phx-submit="create_group" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Nome do Grupo</label>
+              <input
+                type="text"
+                name="group_title"
+                placeholder="ex: Projeto Elixir"
+                required
+                class="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Buscar Membro por Tag/Username</label>
+              <input
+                type="text"
+                phx-keyup="search_group_member"
+                name="member_query"
+                placeholder="ex: alice#2002"
+                class="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-gray-900 dark:text-gray-100 mb-2 focus:ring-2 focus:ring-indigo-500"
+                autocomplete="off"
+              />
+
+              <%= if @group_search_results != [] do %>
+                <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-2 bg-gray-50 dark:bg-gray-800 max-h-32 overflow-y-auto mb-2 space-y-1">
+                  <div
+                    :for={user <- @group_search_results}
+                    class="flex justify-between items-center text-xs p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition"
+                  >
+                    <span class="text-gray-800 dark:text-gray-200 font-medium">{user.username}#{user.tag}</span>
+                    <.button
+                      type="button"
+                      phx-click="add_member_to_group"
+                      phx-value-user-id={user.id}
+                      phx-value-username={user.username}
+                      class="text-[10px] py-1 px-2 cursor-pointer !rounded-lg"
+                    >
+                      <.icon name="hero-plus" /> Adicionar
+                    </.button>
+                  </div>
+                </div>
+              <% end %>
+
+              <div class="text-xs font-semibold text-gray-500 mb-1">Membros Selecionados:</div>
+              <div class="flex flex-wrap gap-1.5 border border-gray-200 dark:border-gray-700 p-2.5 rounded-xl min-h-[44px] bg-gray-50/50 dark:bg-gray-800/30">
+                <span class="bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 text-xs px-2.5 py-1 rounded-lg font-medium">
+                  Você (criador)
+                </span>
+                <span
+                  :for={member <- @selected_group_members}
+                  class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs px-2.5 py-1 rounded-lg flex items-center gap-1 font-medium"
+                >
+                  {member.username}
+                  <button
+                    type="button"
+                    phx-click="remove_member_from_group"
+                    phx-value-user-id={member.id}
+                    class="text-red-500 font-bold cursor-pointer hover:scale-110 transition"
+                  >
+                    ✕
+                  </button>
+                </span>
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+              <.button type="button" phx-click="close_group_modal" class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 cursor-pointer !rounded-xl">
+                Cancelar
+              </.button>
+              <.button type="submit" variant="primary" class="cursor-pointer !rounded-xl">
+                Criar Grupo
+              </.button>
+            </div>
+          </.form>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
+  Modal de Captura de Câmera.
+  """
+  attr(:show, :boolean, default: false)
+
+  def camera_modal(assigns) do
+    ~H"""
+    <div class={["modal-backdrop", if(!@show, do: "hidden")]}>
+      <div class="modal-container max-w-lg p-4 space-y-4">
+        <div class="modal-header !px-2 !py-2">
+          <div class="flex items-center gap-2">
+            <div class="p-2 rounded-xl bg-orange-500/10 text-orange-500">
+              <.icon name="hero-camera" class="w-5 h-5" />
+            </div>
+            <h3 class="text-sm font-bold text-gray-800 dark:text-gray-200">
+              Tirar Foto / Gravar Vídeo
+            </h3>
+          </div>
+          <button
+            type="button"
+            phx-click="close_camera_modal"
+            class="text-gray-400 hover:text-red-500 font-bold text-sm cursor-pointer p-2"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div
+          id="camera-container"
+          phx-hook="CameraCapture"
+          class="relative rounded-2xl overflow-hidden bg-black aspect-video flex items-center justify-center border border-gray-200 dark:border-gray-800"
+        >
+          <video id="camera-preview" autoplay playsinline muted class="w-full h-full object-cover">
+          </video>
+          <canvas id="camera-canvas" class="hidden"></canvas>
+        </div>
+
+        <div class="flex items-center justify-center gap-4 pt-2">
+          <button
+            type="button"
+            id="capture-photo-btn"
+            class="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer"
+          >
+            <.icon name="hero-camera" class="w-4 h-4" /> Tirar Foto
+          </button>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
+  Modal de Conversas Salvas.
+  """
+  attr(:show, :boolean, default: false)
+  attr(:saved_messages, :list, default: [])
+
+  def saved_messages_modal(assigns) do
+    ~H"""
+    <div class={["modal-backdrop", if(!@show, do: "hidden")]}>
+      <div class="modal-container max-w-lg max-h-[80vh]">
+        <div class="modal-header">
+          <div class="flex items-center gap-2">
+            <div class="p-2 rounded-xl bg-amber-500/10 text-amber-500">
+              <.icon name="hero-bookmark" class="w-5 h-5" />
+            </div>
+            <h3 class="font-bold text-gray-800 dark:text-gray-100 text-base">Mensagens Salvas</h3>
+          </div>
+          <button
+            type="button"
+            phx-click="close_saved_messages"
+            class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full transition cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-4 space-y-3">
+          <%= if @saved_messages == [] do %>
+            <div class="flex flex-col items-center justify-center py-12 text-gray-400 space-y-2">
+              <.icon name="hero-bookmark" class="w-10 h-10 stroke-1 opacity-50" />
+              <p class="text-xs">Nenhuma mensagem salva por enquanto</p>
+              <span class="text-[10px] text-gray-400">
+                Clique em "Salvar / Pin" nas opções de qualquer mensagem
+              </span>
+            </div>
+          <% else %>
+            <div
+              :for={msg <- @saved_messages}
+              class="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/60 flex flex-col gap-2 hover:border-amber-500/50 transition group"
+            >
+              <div class="flex justify-between items-center text-xs">
+                <span class="font-bold text-indigo-500 dark:text-indigo-400">
+                  {msg.user.username}
+                </span>
+                <span class="text-[10px] text-gray-400">
+                  {Calendar.strftime(msg.inserted_at, "%d/%m/%Y às %H:%M")}
+                </span>
+              </div>
+
+              <p class="text-xs text-gray-700 dark:text-gray-300 break-words bg-white dark:bg-gray-900/50 p-2.5 rounded-xl border border-gray-100 dark:border-gray-800">
+                {msg.content}
+              </p>
+
+              <div class="flex items-center justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  phx-click={JS.dispatch("copy_to_clipboard", detail: %{text: msg.content})}
+                  class="px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-200/70 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 flex items-center gap-1 transition cursor-pointer"
+                >
+                  <.icon name="hero-document-duplicate" class="w-3.5 h-3.5" /> Copiar
+                </button>
+                <button
+                  type="button"
+                  phx-click="jump_to_saved_message"
+                  phx-value-chat-id={msg.chat_id}
+                  phx-value-msg-id={msg.id}
+                  class="px-3 py-1.5 rounded-xl text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-1 transition shadow-sm cursor-pointer"
+                >
+                  <.icon name="hero-arrow-uturn-left" class="w-3.5 h-3.5" /> Ir para o Chat
+                </button>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
     </div>
     """
   end
