@@ -17,12 +17,6 @@ defmodule KgkmWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/", KgkmWeb do
-    pipe_through :browser
-
-    get "/", PageController, :home
-  end
-
   # Other scopes may use custom stacks.
   # scope "/api", KgkmWeb do
   #   pipe_through :api
@@ -52,6 +46,7 @@ defmodule KgkmWeb.Router do
 
     live_session :require_authenticated_user,
       on_mount: [{KgkmWeb.UserAuth, :require_authenticated}] do
+      live "/", ChatLive.Index, :index
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
       live "/chats", ChatLive.Index, :index
@@ -63,6 +58,9 @@ defmodule KgkmWeb.Router do
 
   scope "/", KgkmWeb do
     pipe_through [:browser]
+    # Se você quiser que a raiz para visitantes não logados vá para a página de login ou continue na home antiga:
+    # Opção A: Mandar direto para o Login se não estiver logado
+    get "/", PageController, :home # Ou você pode criar um Controller/LiveView de boas-vindas aqui
 
     live_session :current_user,
       on_mount: [{KgkmWeb.UserAuth, :mount_current_scope}] do
