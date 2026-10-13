@@ -940,4 +940,52 @@ defmodule KgkmWeb.CoreComponents do
     </div>
     """
   end
+
+  @doc """
+  Renders an individual dropdown menu for chat actions (mute, clear, delete).
+  """
+  attr :chat_id, :string, required: true
+  attr :is_muted?, :boolean, default: false
+
+  def chat_actions_dropdown(assigns) do
+    ~H"""
+    <div class="dropdown dropdown-end shrink-0">
+      <div tabindex="0" role="button" class="p-1.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-gray-400 cursor-pointer">
+        <.icon name="hero-ellipsis-vertical" class="w-4 h-4" />
+      </div>
+      <ul tabindex="0" class="dropdown-content menu z-50 p-1 shadow-2xl bg-white dark:bg-gray-800 rounded-xl w-44 border border-gray-100 dark:border-gray-700 text-xs space-y-0.5">
+        <li>
+          <button
+            type="button"
+            phx-click={JS.push("toggle_mute_chat", value: %{"chat-id" => @chat_id}) |> JS.dispatch("click", to: "body")}
+            class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg w-full text-left"
+          >
+            <.icon name={if @is_muted?, do: "hero-speaker-x-mark", else: "hero-speaker-wave"} class="w-3.5 h-3.5 text-blue-500" />
+            <span>{if @is_muted?, do: "Desmutar Chat", else: "Mutar Chat"}</span>
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            phx-click={JS.push("clear_chat_history", value: %{"chat-id" => @chat_id}) |> JS.dispatch("click", to: "body")}
+            class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg w-full text-left text-amber-600"
+          >
+            <.icon name="hero-trash" class="w-3.5 h-3.5" />
+            <span>Limpar Conversa</span>
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            phx-click={JS.push("delete_chat_for_me", value: %{"chat-id" => @chat_id}) |> JS.dispatch("click", to: "body")}
+            class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg w-full text-left text-error"
+          >
+            <.icon name="hero-x-circle" class="w-3.5 h-3.5" />
+            <span>Excluir Chat</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+    """
+  end
 end
