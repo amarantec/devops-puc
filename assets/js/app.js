@@ -174,10 +174,16 @@ Hooks.ChatScroll = {
         top: container.scrollHeight,
         behavior: smooth ? "smooth" : "auto"
       });
+
+      // Oculta o botão imediatamente ao descer
+      if (scrollBottomBtn) {
+        scrollBottomBtn.classList.add("hidden");
+      }
     };
 
     // Rola para o fim assim que o chat monta
     scrollToBottom(false);
+    setTimeout(() => scrollToBottom(false), 50); // Garante após o paint do DOM
 
     // Observa novas inserções no stream de mensagens
     this.handleEvent("scroll_to_bottom", () => {
@@ -187,6 +193,13 @@ Hooks.ChatScroll = {
     // Controla a aparição do botão "descer para o fim" ao rolar para cima
     container.addEventListener("scroll", () => {
       let distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+
+      // Se o container não tiver scroll suficiente (chat vazio), nem mostra o botão
+      if (container.scrollHeight <= container.clientHeight) {
+        if (scrollBottomBtn) scrollBottomBtn.classList.add("hidden");
+        return;
+      }
+
       if (scrollBottomBtn) {
         if (distanceFromBottom > 300) {
           scrollBottomBtn.classList.remove("hidden");
@@ -204,7 +217,7 @@ Hooks.ChatScroll = {
         scrollToBottom(true);
       });
     }
-    // Escuta o evento global para focar/rolar até uma mensagem citada
+
     // Escuta evento global para focar/rolar até uma mensagem citada
     window.addEventListener("scroll_to_message", (e) => {
       let msgId = e.detail.msgId;
