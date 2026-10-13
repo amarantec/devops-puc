@@ -100,37 +100,46 @@ defmodule KgkmWeb.ChatLive.Index do
 
             <!-- Lista de conversas do usuário -->
             <div class="flex-1 overflow-y-auto p-2 space-y-1">
-              <div :for={chat <- @chats}>
+              <div :for={chat <- @chats} class="relative group">
                 <% info = chat_display_info(chat, @current_scope.user.id) %>
-                <.link
-                  patch={~p"/chats/#{chat.id}"}
-                  class={"flex items-center gap-3 p-2.5 rounded-2xl transition #{if @active_chat && @active_chat.id == chat.id, do: "bg-orange-500 text-white dark:bg-indigo-500", else: "hover:bg-gray-100 dark:hover:bg-gray-800"}"}
-                >
-                  <div class={"user-avatar overflow-hidden #{if @active_chat && @active_chat.id == chat.id, do: "!bg-white/20 !text-white"}"}>
-                    <%= if info.avatar_url do %>
-                      <img src={info.avatar_url} class="w-full h-full object-cover" alt="Avatar" />
-                    <% else %>
-                      {info.initials}
-                    <% end %>
-                  </div>
 
-                  <div class="flex-1 min-w-0">
-                    <div class="flex justify-between items-baseline">
-                      <p class="text-sm font-semibold truncate">{info.title}</p>
-                      <span class="text-[10px] opacity-75">
-                        {if chat.type == :group, do: "Grupo", else: "DM"}
-                      </span>
+                <div class={"flex items-center gap-3 p-2.5 rounded-2xl transition #{if @active_chat && @active_chat.id == chat.id, do: "bg-orange-500 text-white dark:bg-indigo-500", else: "hover:bg-gray-100 dark:hover:bg-gray-800"}"}>
+
+                  <!-- Link que seleciona o chat -->
+                  <.link patch={~p"/chats/#{chat.id}"} class="flex items-center gap-3 flex-1 min-w-0">
+                    <div class={"user-avatar overflow-hidden #{if @active_chat && @active_chat.id == chat.id, do: "!bg-white/20 !text-white"}"}>
+                      <%= if info.avatar_url do %>
+                        <img src={info.avatar_url} class="w-full h-full object-cover" alt="Avatar" />
+                      <% else %>
+                        {info.initials}
+                      <% end %>
                     </div>
-                  </div>
 
+                    <div class="flex-1 min-w-0">
+                      <div class="flex justify-between items-baseline">
+                        <p class="text-sm font-semibold truncate">{info.title}</p>
+                        <span class="text-[10px] opacity-75">
+                          {if chat.type == :group, do: "Grupo", else: "DM"}
+                        </span>
+                      </div>
+                    </div>
+                  </.link>
+
+                  <!-- BADGE DE NÃO LIDAS -->
                   <%= if chat.unread_count > 0 do %>
                     <span class="bg-orange-500 dark:bg-indigo-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0">
                       {chat.unread_count}
                     </span>
                   <% end %>
-                </.link>
+
+                  <!-- COMPONENTE DO DROPDOWN INDIVIDUAL -->
+                  <% member = Enum.find(chat.chat_members, &(&1.user_id == @current_scope.user.id)) %>
+                  <% is_muted? = if member, do: member.is_muted?, else: false %>
+
+                  <.chat_actions_dropdown chat_id={chat.id} is_muted?={is_muted?} />
+                </div>
               </div>
-            </div>
+              </div>
           </aside>
 
           <!-- Area de Mensagens da Sala Ativa -->
@@ -220,7 +229,7 @@ defmodule KgkmWeb.ChatLive.Index do
                 </div>
 
                 <!-- Botão flutuante para descer ao fim do chat (Scroll FAB) -->
-                <div class="absolute bottom-4 right-4 z-20">
+                <div class="sticky bottom-4 self-end mr-2 z-20 mt-auto">
                   <button
                     type="button"
                     id="scroll-to-bottom-btn"
@@ -352,7 +361,7 @@ defmodule KgkmWeb.ChatLive.Index do
     end
 
     chat = Chats.get_chat!(scope, chat_id)
-    messages = Messages.list_messages(chat_id)
+    messages = Messages.list_messages(chat_id, scope.user.id)
 
     # Zera as mensagens não lidas do chat aberto
     updated_chats =
@@ -770,5 +779,72 @@ defmodule KgkmWeb.ChatLive.Index do
      # Opcional: Já deixa configurado para responder essa msg
      |> assign(:replying_to, msg)
      |> push_patch(to: ~p"/chats/#{chat_id}")}
+  end
+
+  @impl true
+  def handle_event("toggle_mute_chat", %{"chat-id" => chat_id}, socket) do
+    user_id = socket.assigns.current_scope.user.id
+
+    # Atualiza ou alterna o status de mudo na tabela de participantes
+    case Chats.toggle_mute_participant(chat_id, user_id) do
+      {:ok, _} ->
+        socket =
+          socket
+          |> put_flash(:info, "Preferências de notificação atualizadas.")
+          |> assign(:chats, Chats.list_user_chats(socket.assigns.current_scope))
+        {:noreply, socket}
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Não foi possível mutar o chat")}
+    end
+  end
+
+  @impl true
+  def handle_event("clear_chat_history", %{"chat-id" => chat_id}, socket) do
+    user_id = socket.assigns.current_scope.user.id
+
+    # Define um timestamp 'cleared_at' para o usuário neste chat,
+    # fazendo com que mensagens anteriores a este momento fiquem invisíveis apenas para para ele
+    case Chats.clear_history_for_user(chat_id, user_id) do
+      {:ok, _} ->
+        # Recarrega os chats e limpa o stream de mensagens ativas se for o chat atual
+        socket =
+          socket
+          |> put_flash(:info, "Conversa limpa com sucesso")
+          # Recarrega a lista de chats da sidebar
+          |> assign(:chats, Chats.list_user_chats(socket.assigns.current_scope))
+          # Se o chat limpo for o que está aberto atualmente, limpa o stream de mensagens
+          |> then(fn s ->
+            if s.assigns[:active_chat] && s.assigns.active_chat.id == chat_id do
+              stream(s, :messages, [], reset: true)
+              else
+              s
+              end
+          end)
+        {:noreply, socket}
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Erro ao limpar conversa")}
+    end
+  end
+
+  @impl true
+  def handle_event("delete_chat_for_me", %{"chat-id" => chat_id}, socket) do
+    user_id = socket.assigns.current_scope.user.id
+
+    # Oculta o chat da lista pessoal do usuário (soft delete)
+    case Chats.hide_chat_for_user(chat_id, user_id) do
+      {:ok, _} ->
+        socket =
+          if socket.assigns.active_chat && socket.assigns.active_chat.id == chat_id do
+            push_patch(socket, to: "~p/chats")
+          else
+            socket
+          end
+          |> put_flash(:info, "Chat removido da sua lista")
+          |> assign(:chats, Chats.list_user_chats(socket.assigns.current_scope))
+          |> assign(:active_chat, nil)
+        {:noreply, socket}
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Erro ao excluir chat.")}
+    end
   end
 end
