@@ -7,7 +7,6 @@ defmodule Kgkm.Chats.Chat do
   schema "chats" do
     field :title, :string
     field :type, Ecto.Enum, values: [:direct, :group]
-    field :is_muted?, :boolean, default: false
 
     has_many :messages, Kgkm.Messages.Message
     has_many :chat_members, Kgkm.Chats.ChatMember
@@ -17,7 +16,7 @@ defmodule Kgkm.Chats.Chat do
   @doc false
   def changeset(chat, attrs, _scope) do
     chat
-    |> cast(attrs, [:title, :type, :is_muted?])
+    |> cast(attrs, [:title, :type])
     |> validate_required([:type])
   end
 end
