@@ -7,14 +7,17 @@ defmodule Kgkm.Chats do
   def list_user_chats(%Scope{} = scope) do
     user_id = scope.user.id
 
+    chats =
     from(c in Chat,
       join: cm in ChatMember,
       on: cm.chat_id == c.id,
-      where: cm.user_id == ^user_id,
+      where: cm.user_id == ^user_id and is_nil(cm.hidden_at),
       order_by: [desc: c.updated_at]
     )
     |> Repo.all()
     |> Repo.preload(chat_members: :user)
+    # Adiciona o campo unread_count temporariamente para evitar erro na view
+    Enum.map(chats, fn chat -> Map.put(chat, :unread_count, 0) end)
   end
 
   def get_chat!(%Scope{} = _scope, id) do
@@ -40,6 +43,11 @@ defmodule Kgkm.Chats do
 
     case Repo.one(query) do
       %Chat{} = chat ->
+        # Se o chat já existia mas estava oculto (hiddent_at) para algum dos usuários
+        Repo.update_all(
+          from(cm in ChatMember, where: cm.chat_id == ^chat.id and cm.user_id == ^current_user_id),
+          set: [hidden_at: nil]
+        )
         {:ok, chat}
 
       nil ->
@@ -74,6 +82,41 @@ defmodule Kgkm.Chats do
     Enum.each(user_ids, fn user_id ->
       Repo.insert!(%ChatMember{chat_id: chat_id, user_id: user_id})
     end)
+  end
+
+  @doc"""
+  Alterna o status de mudo de um chat para um usuário específico.
+  """
+  def toggle_mute_participant(chat_id, user_id) do
+    member = Repo.get_by!(ChatMember, chat_id: chat_id, user_id: user_id)
+    new_status = !member.is_muted?
+
+    member
+    |> ChatMember.changeset(%{is_muted?: new_status})
+    |> Repo.update()
+  end
+
+  @doc"""
+  Define um timestamp 'cleared_at' para o usuário, ocultando mensagens anteriores apenas para ele.
+  """
+  def clear_history_for_user(chat_id, user_id) do
+    member = Repo.get_by!(ChatMember, chat_id: chat_id, user_id: user_id)
+
+    member
+    |> ChatMember.changeset(%{cleared_at: DateTime.utc_now() |> DateTime.truncate(:second)})
+    |> Repo.update()
+
+  end
+
+  @doc"""
+  Oculta o chat da lista pessoal do usuário (Excluir para mim)
+  """
+  def hide_chat_for_user(chat_id, user_id) do
+    member = Repo.get_by!(ChatMember, chat_id: chat_id, user_id: user_id)
+
+    member
+    |> ChatMember.changeset(%{hidden_at: DateTime.utc_now() |> DateTime.truncate(:second)})
+    |> Repo.update()
   end
 
   def change_chat(%Scope{} = scope, %Chat{} = chat, attrs \\ %{}) do
