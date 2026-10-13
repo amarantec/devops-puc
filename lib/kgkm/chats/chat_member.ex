@@ -6,6 +6,8 @@ defmodule Kgkm.Chats.ChatMember do
   @foreign_key_type :binary_id
   schema "chat_members" do
     field :is_muted?, :boolean, default: false
+    field :cleared_at, :utc_datetime
+    field :hidden_at, :utc_datetime
 
     belongs_to :chat, Kgkm.Chats.Chat
     belongs_to :user, Kgkm.Accounts.User
@@ -15,7 +17,7 @@ defmodule Kgkm.Chats.ChatMember do
 
   def changeset(chat_member, attrs) do
     chat_member
-    |> cast(attrs, [:chat_id, :user_id, :is_muted?])
+    |> cast(attrs, [:chat_id, :user_id, :is_muted?, :cleared_at, :hidden_at])
     |> validate_required([:chat_id, :user_id])
     |> unique_constraint([:chat_id, :user_id])
   end
