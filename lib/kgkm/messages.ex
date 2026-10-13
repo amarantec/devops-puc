@@ -18,9 +18,23 @@ defmodule Kgkm.Messages do
     Phoenix.PubSub.broadcast(Kgkm.PubSub, "chat:#{chat_id}:messages", event)
   end
 
-  def list_messages(chat_id) do
-    Message
-    |> where([m], m.chat_id == ^chat_id)
+  def list_messages(chat_id, user_id) do
+    # Busca o member para checar se há uma data de limpeza de histórico
+    member = Repo.get_by!(Kgkm.Chats.ChatMember, chat_id: chat_id, user_id: user_id)
+    cleared_at = member && member.cleared_at
+
+    query=
+      Message
+      |> where([m], m.chat_id == ^chat_id)
+
+    query =
+      if cleared_at do
+        where(query, [m], m.inserted_at > ^cleared_at)
+      else
+        query
+      end
+
+    query
     |> order_by([m], asc: m.inserted_at)
     |> Repo.all()
     |> Repo.preload([:user, reply_to: :user])
