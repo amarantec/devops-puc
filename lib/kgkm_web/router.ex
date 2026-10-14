@@ -58,9 +58,11 @@ defmodule KgkmWeb.Router do
 
   scope "/", KgkmWeb do
     pipe_through [:browser]
+
     # Se você quiser que a raiz para visitantes não logados vá para a página de login ou continue na home antiga:
     # Opção A: Mandar direto para o Login se não estiver logado
-    get "/", PageController, :home # Ou você pode criar um Controller/LiveView de boas-vindas aqui
+    # Ou você pode criar um Controller/LiveView de boas-vindas aqui
+    get "/", PageController, :home
 
     live_session :current_user,
       on_mount: [{KgkmWeb.UserAuth, :mount_current_scope}] do
