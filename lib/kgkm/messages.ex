@@ -20,24 +20,29 @@ defmodule Kgkm.Messages do
 
   def list_messages(chat_id, user_id) do
     # Busca o member para checar se há uma data de limpeza de histórico
-    member = Repo.get_by!(Kgkm.Chats.ChatMember, chat_id: chat_id, user_id: user_id)
-    cleared_at = member && member.cleared_at
+    case Repo.get_by(Kgkm.Chats.ChatMember, chat_id: chat_id, user_id: user_id) do
+      nil ->
+        []
 
-    query=
-      Message
-      |> where([m], m.chat_id == ^chat_id)
+      member ->
+         cleared_at = member.cleared_at
 
-    query =
-      if cleared_at do
-        where(query, [m], m.inserted_at > ^cleared_at)
-      else
+        query =
+          Message
+          |> where([m], m.chat_id == ^chat_id)
+
+        query =
+          if cleared_at do
+            where(query, [m], m.inserted_at > ^cleared_at)
+          else
+            query
+          end
+
         query
-      end
-
-    query
-    |> order_by([m], asc: m.inserted_at)
-    |> Repo.all()
-    |> Repo.preload([:user, reply_to: :user])
+        |> order_by([m], asc: m.inserted_at)
+        |> Repo.all()
+        |> Repo.preload([:user, reply_to: :user])
+    end
   end
 
   def create_message(%Scope{} = scope, attrs) do
