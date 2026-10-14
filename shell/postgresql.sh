@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-podman run -p 5432:5432 \
+docker run -p 5432:5432 \
            --name kgkm-db \
            --network kgkm-network \
            -e POSTGRES_PASSWORD=123456 \

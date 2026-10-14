@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-podman network create kgkm-network
+docker network create kgkm-network
