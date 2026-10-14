@@ -40,8 +40,7 @@ user2 =
 chat =
   Repo.insert!(%Chat{
     title: nil,
-    type: :direct,
-    is_muted?: false
+    type: :direct
   })
 
 # Vincula ambos como membros
