@@ -51,8 +51,8 @@ defmodule KgkmWeb.ChatLive.Index do
                   <span>Log out</span>
                 </:item>
               </.dropdown>
-
-              <!-- Campo de Busca de Usuários -->
+              
+    <!-- Campo de Busca de Usuários -->
               <form phx-change="search_user" phx-submit="search_user" class="relative flex-1">
                 <input
                   type="text"
@@ -68,8 +68,8 @@ defmodule KgkmWeb.ChatLive.Index do
                 />
               </form>
             </div>
-
-            <!-- Resultados da Busca -->
+            
+    <!-- Resultados da Busca -->
             <%= if @search_query != "" do %>
               <div class="p-2 bg-orange-50/50 dark:bg-indigo-950/20 border-b border-gray-200 dark:border-gray-800 shrink-0">
                 <div class="text-[11px] font-bold text-gray-400 mb-1 px-2 uppercase">
@@ -97,15 +97,15 @@ defmodule KgkmWeb.ChatLive.Index do
                 <% end %>
               </div>
             <% end %>
-
-            <!-- Lista de conversas do usuário -->
+            
+    <!-- Lista de conversas do usuário -->
             <div class="flex-1 overflow-y-auto p-2 space-y-1">
               <div :for={chat <- @chats} class="relative group">
                 <% info = chat_display_info(chat, @current_scope.user.id) %>
 
                 <div class={"flex items-center gap-3 p-2.5 rounded-2xl transition #{if @active_chat && @active_chat.id == chat.id, do: "bg-orange-500 text-white dark:bg-indigo-500", else: "hover:bg-gray-100 dark:hover:bg-gray-800"}"}>
-
-                  <!-- Link que seleciona o chat -->
+                  
+    <!-- Link que seleciona o chat -->
                   <.link patch={~p"/chats/#{chat.id}"} class="flex items-center gap-3 flex-1 min-w-0">
                     <div class={"user-avatar overflow-hidden #{if @active_chat && @active_chat.id == chat.id, do: "!bg-white/20 !text-white"}"}>
                       <%= if info.avatar_url do %>
@@ -124,32 +124,35 @@ defmodule KgkmWeb.ChatLive.Index do
                       </div>
                     </div>
                   </.link>
-
-                  <!-- BADGE DE NÃO LIDAS -->
+                  
+    <!-- BADGE DE NÃO LIDAS -->
                   <%= if chat.unread_count > 0 do %>
                     <span class="bg-orange-500 dark:bg-indigo-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0">
                       {chat.unread_count}
                     </span>
                   <% end %>
-
-                  <!-- COMPONENTE DO DROPDOWN INDIVIDUAL -->
+                  
+    <!-- COMPONENTE DO DROPDOWN INDIVIDUAL -->
                   <% member = Enum.find(chat.chat_members, &(&1.user_id == @current_scope.user.id)) %>
                   <% is_muted? = if member, do: member.is_muted?, else: false %>
 
                   <.chat_actions_dropdown chat_id={chat.id} is_muted?={is_muted?} />
                 </div>
               </div>
-              </div>
+            </div>
           </aside>
-
-          <!-- Area de Mensagens da Sala Ativa -->
+          
+    <!-- Area de Mensagens da Sala Ativa -->
           <main class={"chat-main-responsive #{if @active_chat, do: "flex", else: "hidden md:flex"}"}>
             <%= if @active_chat do %>
               <% active_info = chat_display_info(@active_chat, @current_scope.user.id) %>
-
-              <!-- Subcabeçalho da Conversa -->
+              
+    <!-- Subcabeçalho da Conversa -->
               <div class="chat-subheader p-3 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center gap-3 z-10 shrink-0">
-                <.link patch={~p"/chats"} class="md:hidden p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300">
+                <.link
+                  patch={~p"/chats"}
+                  class="md:hidden p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300"
+                >
                   <.icon name="hero-arrow-left" class="w-5 h-5 text-orange-500 dark:text-indigo-500" />
                 </.link>
 
@@ -165,8 +168,8 @@ defmodule KgkmWeb.ChatLive.Index do
                   <p class="text-xs text-gray-400">em tempo real</p>
                 </div>
               </div>
-
-              <!-- Feed de Mensagens (Stream com Scroll Independente e Botão FAB de Scroll) -->
+              
+    <!-- Feed de Mensagens (Stream com Scroll Independente e Botão FAB de Scroll) -->
               <div class="relative flex-1 min-h-0 flex flex-col">
                 <div
                   id="messages-feed"
@@ -189,7 +192,11 @@ defmodule KgkmWeb.ChatLive.Index do
                         <.msg_actions_dropdown msg_id={msg.id} msg_content={msg.content} is_me={true} />
                       <% end %>
 
-                      <div class={if msg.user_id == @current_scope.user.id, do: "msg-bubble-sent", else: "msg-bubble-received"}>
+                      <div class={
+                        if msg.user_id == @current_scope.user.id,
+                          do: "msg-bubble-sent",
+                          else: "msg-bubble-received"
+                      }>
                         <%= if Map.get(msg, :reply_to) && msg.reply_to do %>
                           <div
                             class="reply-message"
@@ -204,31 +211,54 @@ defmodule KgkmWeb.ChatLive.Index do
                           <% ext = String.downcase(Path.extname(msg.file_url)) %>
                           <%= if ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"] do %>
                             <div class="mb-2 rounded-2xl overflow-hidden max-w-xs cursor-pointer group/img relative">
-                              <img src={msg.file_url} class="w-full h-auto object-cover rounded-2xl transition group-hover/img:scale-105" alt="Foto" onclick={"window.open('#{msg.file_url}', '_blank')"} />
+                              <img
+                                src={msg.file_url}
+                                class="w-full h-auto object-cover rounded-2xl transition group-hover/img:scale-105"
+                                alt="Foto"
+                                onclick={"window.open('#{msg.file_url}', '_blank')"}
+                              />
                             </div>
                           <% else %>
                             <%= if ext in [".mp3", ".wav", ".ogg"] do %>
-                              <div class="mb-2 min-w-[200px]"><audio controls class="w-full h-10"><source src={msg.file_url} /></audio></div>
+                              <div class="mb-2 min-w-[200px]">
+                                <audio controls class="w-full h-10">
+                                  <source src={msg.file_url} />
+                                </audio>
+                              </div>
                             <% else %>
                               <div class="mb-2 p-3 rounded-2xl bg-black/5 dark:bg-white/5 flex items-center justify-between gap-3 min-w-[200px]">
-                                <p class="text-xs font-bold truncate">{Path.basename(msg.file_url)}</p>
-                                <a href={msg.file_url} download class="p-1.5 hover:bg-black/10 rounded-lg"><.icon name="hero-arrow-down-tray" class="w-4 h-4" /></a>
+                                <p class="text-xs font-bold truncate">
+                                  {Path.basename(msg.file_url)}
+                                </p>
+                                <a
+                                  href={msg.file_url}
+                                  download
+                                  class="p-1.5 hover:bg-black/10 rounded-lg"
+                                >
+                                  <.icon name="hero-arrow-down-tray" class="w-4 h-4" />
+                                </a>
                               </div>
                             <% end %>
                           <% end %>
                         <% end %>
                         <p class="break-words">{msg.content}</p>
-                        <div class="text-[9px] text-right mt-1 opacity-75">{Calendar.strftime(msg.inserted_at, "%H:%M")}</div>
+                        <div class="text-[9px] text-right mt-1 opacity-75">
+                          {Calendar.strftime(msg.inserted_at, "%H:%M")}
+                        </div>
                       </div>
 
                       <%= if msg.user_id != @current_scope.user.id do %>
-                        <.msg_actions_dropdown msg_id={msg.id} msg_content={msg.content} is_me={false} />
+                        <.msg_actions_dropdown
+                          msg_id={msg.id}
+                          msg_content={msg.content}
+                          is_me={false}
+                        />
                       <% end %>
                     </div>
                   </div>
                 </div>
-
-                <!-- Botão flutuante para descer ao fim do chat (Scroll FAB) -->
+                
+    <!-- Botão flutuante para descer ao fim do chat (Scroll FAB) -->
                 <div class="sticky bottom-4 self-end mr-2 z-20 mt-auto">
                   <button
                     type="button"
@@ -236,51 +266,98 @@ defmodule KgkmWeb.ChatLive.Index do
                     class="scroll-fab-btn"
                     title="Ir para mensagens recentes"
                   >
-                    <.icon name="hero-arrow-down" class="w-5 h-5 text-orange-500 dark:text-indigo-500" />
+                    <.icon
+                      name="hero-arrow-down"
+                      class="w-5 h-5 text-orange-500 dark:text-indigo-500"
+                    />
                   </button>
                 </div>
               </div>
-
-              <!-- Rodapé fixo: Caixas de citação, previews e inputs -->
+              
+    <!-- Rodapé fixo: Caixas de citação, previews e inputs -->
               <div class="shrink-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
                 <%= if @replying_to do %>
                   <div class="px-4 py-2 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                     <div class="text-xs truncate">
-                      <p class="font-bold text-orange-500 dark:text-indigo-500">Respondendo a {@replying_to.user.username}</p>
+                      <p class="font-bold text-orange-500 dark:text-indigo-500">
+                        Respondendo a {@replying_to.user.username}
+                      </p>
                       <p class="text-gray-500 dark:text-gray-400 truncate">{@replying_to.content}</p>
                     </div>
-                    <button phx-click="cancel_reply" class="text-gray-400 hover:text-gray-600 font-bold">x</button>
+                    <button
+                      phx-click="cancel_reply"
+                      class="text-gray-400 hover:text-gray-600 font-bold"
+                    >
+                      x
+                    </button>
                   </div>
                 <% end %>
 
                 <%= for entry <- @uploads.chat_file.entries do %>
                   <div class="px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between text-xs">
                     <span class="font-medium truncate">{entry.client_name}</span>
-                    <button type="button" phx-click="cancel-upload" phx-value-ref={entry.ref} class="text-red-500">
+                    <button
+                      type="button"
+                      phx-click="cancel-upload"
+                      phx-value-ref={entry.ref}
+                      class="text-red-500"
+                    >
                       <.icon name="hero-x-mark" class="w-5 h-5" />
                     </button>
                   </div>
                 <% end %>
 
-                <.form for={@form} id="message-form" phx-change="validate" phx-submit="save" class="p-3 flex items-center gap-2">
+                <.form
+                  for={@form}
+                  id="message-form"
+                  phx-change="validate"
+                  phx-submit="save"
+                  class="p-3 flex items-center gap-2"
+                >
                   <label class="p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 cursor-pointer shrink-0 flex items-center justify-center">
-                    <.icon name="hero-paper-clip" class="w-5 h-5 text-orange-500 dark:text-indigo-500" />
+                    <.icon
+                      name="hero-paper-clip"
+                      class="w-5 h-5 text-orange-500 dark:text-indigo-500"
+                    />
                     <.live_file_input upload={@uploads.chat_file} class="sr-only" />
                   </label>
-                  <button type="button" phx-click="open_camera_modal" class="p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 shrink-0 flex items-center justify-center cursor-pointer">
+                  <button
+                    type="button"
+                    phx-click="open_camera_modal"
+                    class="p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 shrink-0 flex items-center justify-center cursor-pointer"
+                  >
                     <.icon name="hero-camera" class="w-5 h-5 text-orange-500 dark:text-indigo-500" />
                   </button>
                   <div class="flex-1 flex items-center">
-                    <input type="text" name={@form[:content].name}
-                    value={@form[:content].value}
-                    placeholder="Escreva uma mensagem..." autocomplete="off" class="chat-input-message !m-0" />
+                    <input
+                      type="text"
+                      name={@form[:content].name}
+                      value={@form[:content].value}
+                      placeholder="Escreva uma mensagem..."
+                      autocomplete="off"
+                      class="chat-input-message !m-0"
+                    />
                   </div>
                   <%= if (is_nil(@form[:content].value) || @form[:content].value == "") && @uploads.chat_file.entries == [] do %>
-                    <button type="button" id="audio-mic-button" phx-hook="MediaRecorder" class="audio-mic-button cursor-pointer" title="Gravar Áudio">
-                      <.icon name="hero-microphone" class="w-5 h-5 text-orange-500 dark:text-indigo-500" />
+                    <button
+                      type="button"
+                      id="audio-mic-button"
+                      phx-hook="MediaRecorder"
+                      class="audio-mic-button cursor-pointer"
+                      title="Gravar Áudio"
+                    >
+                      <.icon
+                        name="hero-microphone"
+                        class="w-5 h-5 text-orange-500 dark:text-indigo-500"
+                      />
                     </button>
                   <% else %>
-                    <.button variant="primary" type="submit" phx-disable-with="..." title="Enviar Mensagem">
+                    <.button
+                      variant="primary"
+                      type="submit"
+                      phx-disable-with="..."
+                      title="Enviar Mensagem"
+                    >
                       <.icon name="hero-paper-airplane" class="w-4 h-4 text-white" />
                     </.button>
                   <% end %>
@@ -295,11 +372,18 @@ defmodule KgkmWeb.ChatLive.Index do
           </main>
         </div>
       </div>
-
-      <!-- MODAIS DO SISTEMA DE CHAT -->
-      <KgkmWeb.CoreComponents.group_modal show={@show_group_modal?} group_search_results={@group_search_results} selected_group_members={@selected_group_members} />
+      
+    <!-- MODAIS DO SISTEMA DE CHAT -->
+      <KgkmWeb.CoreComponents.group_modal
+        show={@show_group_modal?}
+        group_search_results={@group_search_results}
+        selected_group_members={@selected_group_members}
+      />
       <KgkmWeb.CoreComponents.camera_modal show={@show_camera_modal?} />
-      <KgkmWeb.CoreComponents.saved_messages_modal show={@show_saved_modal?} saved_messages={@saved_messages} />
+      <KgkmWeb.CoreComponents.saved_messages_modal
+        show={@show_saved_modal?}
+        saved_messages={@saved_messages}
+      />
     </Layouts.app>
     """
   end
@@ -792,7 +876,9 @@ defmodule KgkmWeb.ChatLive.Index do
           socket
           |> put_flash(:info, "Preferências de notificação atualizadas.")
           |> assign(:chats, Chats.list_user_chats(socket.assigns.current_scope))
+
         {:noreply, socket}
+
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Não foi possível mutar o chat")}
     end
@@ -816,11 +902,13 @@ defmodule KgkmWeb.ChatLive.Index do
           |> then(fn s ->
             if s.assigns[:active_chat] && s.assigns.active_chat.id == chat_id do
               stream(s, :messages, [], reset: true)
-              else
+            else
               s
-              end
+            end
           end)
+
         {:noreply, socket}
+
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Erro ao limpar conversa")}
     end
@@ -842,7 +930,9 @@ defmodule KgkmWeb.ChatLive.Index do
           |> put_flash(:info, "Chat removido da sua lista")
           |> assign(:chats, Chats.list_user_chats(socket.assigns.current_scope))
           |> assign(:active_chat, nil)
+
         {:noreply, socket}
+
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Erro ao excluir chat.")}
     end
