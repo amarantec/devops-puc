@@ -725,7 +725,11 @@ defmodule KgkmWeb.CoreComponents do
             </div>
             <h3 class="font-bold text-gray-800 dark:text-gray-100 text-base">Criar Novo Grupo</h3>
           </div>
-          <button type="button" phx-click="close_group_modal" class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full transition cursor-pointer">
+          <button
+            type="button"
+            phx-click="close_group_modal"
+            class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full transition cursor-pointer"
+          >
             ✕
           </button>
         </div>
@@ -733,7 +737,9 @@ defmodule KgkmWeb.CoreComponents do
         <div class="modal-body">
           <.form for={%{}} phx-submit="create_group" class="space-y-4">
             <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Nome do Grupo</label>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">
+                Nome do Grupo
+              </label>
               <input
                 type="text"
                 name="group_title"
@@ -744,7 +750,9 @@ defmodule KgkmWeb.CoreComponents do
             </div>
 
             <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Buscar Membro por Tag/Username</label>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">
+                Buscar Membro por Tag/Username
+              </label>
               <input
                 type="text"
                 phx-keyup="search_group_member"
@@ -760,7 +768,9 @@ defmodule KgkmWeb.CoreComponents do
                     :for={user <- @group_search_results}
                     class="flex justify-between items-center text-xs p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition"
                   >
-                    <span class="text-gray-800 dark:text-gray-200 font-medium">{user.username}#{user.tag}</span>
+                    <span class="text-gray-800 dark:text-gray-200 font-medium">
+                      {user.username}#{user.tag}
+                    </span>
                     <.button
                       type="button"
                       phx-click="add_member_to_group"
@@ -797,7 +807,11 @@ defmodule KgkmWeb.CoreComponents do
             </div>
 
             <div class="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-              <.button type="button" phx-click="close_group_modal" class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 cursor-pointer !rounded-xl">
+              <.button
+                type="button"
+                phx-click="close_group_modal"
+                class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 cursor-pointer !rounded-xl"
+              >
                 Cancelar
               </.button>
               <.button type="submit" variant="primary" class="cursor-pointer !rounded-xl">
@@ -950,24 +964,40 @@ defmodule KgkmWeb.CoreComponents do
   def chat_actions_dropdown(assigns) do
     ~H"""
     <div class="dropdown dropdown-end shrink-0">
-      <div tabindex="0" role="button" class="p-1.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-gray-400 cursor-pointer">
+      <div
+        tabindex="0"
+        role="button"
+        class="p-1.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-gray-400 cursor-pointer"
+      >
         <.icon name="hero-ellipsis-vertical" class="w-4 h-4" />
       </div>
-      <ul tabindex="0" class="dropdown-content menu z-50 p-1 shadow-2xl bg-white dark:bg-gray-800 rounded-xl w-44 border border-gray-100 dark:border-gray-700 text-xs space-y-0.5">
+      <ul
+        tabindex="0"
+        class="dropdown-content menu z-50 p-1 shadow-2xl bg-white dark:bg-gray-800 rounded-xl w-44 border border-gray-100 dark:border-gray-700 text-xs space-y-0.5"
+      >
         <li>
           <button
             type="button"
-            phx-click={JS.push("toggle_mute_chat", value: %{"chat-id" => @chat_id}) |> JS.dispatch("click", to: "body")}
+            phx-click={
+              JS.push("toggle_mute_chat", value: %{"chat-id" => @chat_id})
+              |> JS.dispatch("click", to: "body")
+            }
             class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg w-full text-left"
           >
-            <.icon name={if @is_muted?, do: "hero-speaker-x-mark", else: "hero-speaker-wave"} class="w-3.5 h-3.5 text-blue-500" />
+            <.icon
+              name={if @is_muted?, do: "hero-speaker-x-mark", else: "hero-speaker-wave"}
+              class="w-3.5 h-3.5 text-blue-500"
+            />
             <span>{if @is_muted?, do: "Desmutar Chat", else: "Mutar Chat"}</span>
           </button>
         </li>
         <li>
           <button
             type="button"
-            phx-click={JS.push("clear_chat_history", value: %{"chat-id" => @chat_id}) |> JS.dispatch("click", to: "body")}
+            phx-click={
+              JS.push("clear_chat_history", value: %{"chat-id" => @chat_id})
+              |> JS.dispatch("click", to: "body")
+            }
             class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg w-full text-left text-amber-600"
           >
             <.icon name="hero-trash" class="w-3.5 h-3.5" />
@@ -977,7 +1007,10 @@ defmodule KgkmWeb.CoreComponents do
         <li>
           <button
             type="button"
-            phx-click={JS.push("delete_chat_for_me", value: %{"chat-id" => @chat_id}) |> JS.dispatch("click", to: "body")}
+            phx-click={
+              JS.push("delete_chat_for_me", value: %{"chat-id" => @chat_id})
+              |> JS.dispatch("click", to: "body")
+            }
             class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg w-full text-left text-error"
           >
             <.icon name="hero-x-circle" class="w-3.5 h-3.5" />
