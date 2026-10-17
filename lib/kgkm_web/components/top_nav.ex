@@ -19,26 +19,10 @@ defmodule KgkmWeb.TopNav do
       <ul class="flex flex-row items-center gap-6 list-none p-0 m-0">
         <li>
           <.link
-            href={~p"/products"}
+            href={~p"/chats"}
             class="text-zinc-500 dark:text-zinc-400 font-medium text-sm hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
           >
-            Products
-          </.link>
-        </li>
-        <li>
-          <.link
-            href={~p"/categories"}
-            class="text-zinc-500 dark:text-zinc-400 font-medium text-sm hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-          >
-            Categories
-          </.link>
-        </li>
-        <li>
-          <.link
-            href={~p"/carts"}
-            class="text-zinc-500 dark:text-zinc-400 font-medium text-sm hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-          >
-            Cart
+            Home
           </.link>
         </li>
       </ul>
@@ -81,7 +65,7 @@ defmodule KgkmWeb.TopNav do
               <img src={~p"/images/logo.svg"} width="32" height="32" alt="Logo" />
             </a>
             <p class="bg-blue-500/10 text-blue-500 rounded-lg px-2 py-0.5 font-semibold text-sm m-0">
-              Aiyf
+              KGKM
             </p>
           </div>
           <button
@@ -95,27 +79,19 @@ defmodule KgkmWeb.TopNav do
         <div class="flex-1 py-2">
           <ul class="list-none p-0 m-0">
             <li>
-              <.link
-                href={~p"/tasks"}
+            		<.link
+                href={~p"/chats"}
                 class="block px-5 py-3 text-base font-medium text-zinc-900 dark:text-zinc-100 border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
               >
-                Tasks
+                Home
               </.link>
             </li>
             <li>
-              <.link
-                href={~p"/events"}
+            		<.link
+                href={~p"/users/settings"}
                 class="block px-5 py-3 text-base font-medium text-zinc-900 dark:text-zinc-100 border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
               >
-                Events
-              </.link>
-            </li>
-            <li>
-              <.link
-                href={~p"/categories"}
-                class="block px-5 py-3 text-base font-medium text-zinc-900 dark:text-zinc-100 border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
-              >
-                Categories
+                Settings
               </.link>
             </li>
           </ul>

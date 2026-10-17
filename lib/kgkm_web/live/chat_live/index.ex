@@ -23,7 +23,7 @@ defmodule KgkmWeb.ChatLive.Index do
               <.dropdown id="main-menu">
                 <:trigger>
                   <button class="chat-menu-btn cursor-pointer p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300">
-                    <.icon name="hero-bars-3" class="w-6 h-6" />
+                    <.icon name="hero-chat-bubble-left-right" class="w-6 h-6" />
                   </button>
                 </:trigger>
 
@@ -177,7 +177,7 @@ defmodule KgkmWeb.ChatLive.Index do
                   phx-update="stream"
                   class="flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col space-y-2"
                 >
-                  <div class="chat-date-badge">Hoje</div>
+                  <div class="chat-date-badge" id="date-badge">Hoje</div>
                   <div
                     :for={{dom_id, msg} <- @streams.messages}
                     id={"message-#{msg.id}"}
@@ -391,23 +391,19 @@ defmodule KgkmWeb.ChatLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
-
-    chats =
-      Chats.list_user_chats(scope)
-      |> Enum.map(&Map.put_new(&1, :unread_count, 0))
-
+    chats = load_user_chats(scope)
+    
+    
     if connected?(socket) do
       # Inscreve o usuário em TODOS os chats dele para escutar mensagens em background
       Enum.each(chats, fn chat ->
         Messages.subscribe_chat_messages(chat.id)
       end)
     end
-
-    chats_with_unread = Enum.map(chats, &Map.put(&1, :unread_count, 0))
-
+    
     {:ok,
      socket
-     |> assign(:chats, chats_with_unread)
+     |> assign(:chats, chats)
      |> assign(:active_chat, nil)
      |> assign(:search_query, "")
      |> assign(:search_results, [])
@@ -436,18 +432,18 @@ defmodule KgkmWeb.ChatLive.Index do
   defp apply_params(socket, :show, %{"id" => chat_id}) do
     scope = socket.assigns.current_scope
 
+# Gerenciamento limpo de PubSub do chat anterior para o novo
     if connected?(socket) do
       if active_chat = socket.assigns.active_chat do
         Phoenix.PubSub.unsubscribe(Kgkm.PubSub, "chat:#{active_chat.id}:messages")
       end
-
       Messages.subscribe_chat_messages(chat_id)
     end
 
     chat = Chats.get_chat!(scope, chat_id)
     messages = Messages.list_messages(chat_id, scope.user.id)
 
-    # Zera as mensagens não lidas do chat aberto
+# Zera as mensagens não lidas apenas do chat aberto preservando os outros contadores
     updated_chats =
       Enum.map(socket.assigns.chats, fn c ->
         c = Map.put_new(c, :unread_count, 0)
@@ -463,6 +459,12 @@ defmodule KgkmWeb.ChatLive.Index do
   end
 
   defp apply_params(socket, :index, _params) do
+  		if connected?(socket) do
+  			if active_chat = socket.assigns.active_chat do
+  				Phoenix.PubSub.unsubscribe(Kgkm.PubSub, "chat:#{active_chat.id}:messages")
+  			end
+  		end
+  		
     socket
     |> assign(:active_chat, nil)
     |> stream(:messages, [], reset: true)
@@ -937,4 +939,12 @@ defmodule KgkmWeb.ChatLive.Index do
         {:noreply, put_flash(socket, :error, "Erro ao excluir chat.")}
     end
   end
+  
+  defp load_user_chats(scope) do
+  		Chats.list_user_chats(scope)
+  		|> Enum.map(fn chat ->
+  			# Garante que unread_count exista e seja numerico
+  			Map.put_new(chat, :unread_count, 0)
+  		end)
+  	end
 end

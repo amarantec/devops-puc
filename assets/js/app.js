@@ -299,6 +299,48 @@ Hooks.GetLocation = {
   }
 };
 
+
+// Função auxiliar para converter a chave VAPID
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+// Push Notificaition ativacao no browser
+if ('serviceWorker' in navigator && 'PushManager' in window) {
+    navigator.serviceWorker.ready.then(async (registration) => {
+        const publicVapidKey = "BDiDjrZuXPHF1pJ3oUlhgNyaYPpeUa9qBhNnVDKvOiS8IPDi8zzRAxhf9t6ZA7QfKZoHwjw0KTE1ihGaSXB3ob4";
+        
+        // Converte a chave VAPID para Uint8Array
+        const convertedKey = urlBase64ToUint8Array(publicVapidKey);
+        
+        const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: convertedKey
+        });
+        
+        // Envia a subscription para o backend via fetch ou LiveView hook
+        fetch('/api/push-subscriptions', {
+            method: 'POST',
+            body: JSON.stringify(subscription),
+            headers: {
+                'content-type': 'application/json',
+                'x-csrf-token': document.querySelector("meta[name='csrf-token']").getAttribute("content")
+            }
+        });
+    });
+}
+
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html"
 // Establish Phoenix Socket and LiveView configuration.

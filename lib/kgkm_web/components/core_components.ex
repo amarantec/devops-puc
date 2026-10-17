@@ -969,7 +969,7 @@ defmodule KgkmWeb.CoreComponents do
         role="button"
         class="p-1.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-gray-400 cursor-pointer"
       >
-        <.icon name="hero-ellipsis-vertical" class="w-4 h-4" />
+        <.icon name="hero-ellipsis-vertical" class="w-4 h-4 dark:text-white" />
       </div>
       <ul
         tabindex="0"
