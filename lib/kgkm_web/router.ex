@@ -43,7 +43,7 @@ defmodule KgkmWeb.Router do
 
   scope "/", KgkmWeb do
     pipe_through [:browser, :require_authenticated_user]
-
+		
     live_session :require_authenticated_user,
       on_mount: [{KgkmWeb.UserAuth, :require_authenticated}] do
       live "/", ChatLive.Index, :index
@@ -73,5 +73,12 @@ defmodule KgkmWeb.Router do
 
     post "/users/log-in", UserSessionController, :create
     delete "/users/log-out", UserSessionController, :delete
+  end
+  
+  # Adicione este scope para rotas de API com autenticação browser
+  scope "/api", KgkmWeb do
+    pipe_through [:browser, :require_authenticated_user]
+
+    post "/push-subscriptions", PushSubscriptionController, :create
   end
 end

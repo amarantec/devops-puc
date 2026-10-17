@@ -116,4 +116,14 @@ if config_env() == :prod do
   #     config :swoosh, :api_client, Swoosh.ApiClient.Req
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
+  
+vapid_public_key = System.get_env("VAPID_PUBLIC_KEY") || raise "VAPID_PUBLIC_KEY is not set"
+vapid_private_key = System.get_env("VAPID_PRIVATE_KEY") || raise "VAPID_PRIVATE_KEY is not set"
+vapid_subject = System.get_env("VAPID_SUBJECT") || raise "VAPID_SUBJECT is not set"
+
+config :web_push_encryption, :vapid_details,
+  subject: vapid_subject,
+  public_key: vapid_public_key,
+  private_key: vapid_private_key
+
 end
