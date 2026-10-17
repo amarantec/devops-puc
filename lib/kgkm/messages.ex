@@ -51,9 +51,28 @@ defmodule Kgkm.Messages do
     |> Repo.insert()
     |> case do
       {:ok, message} ->
-        message = Repo.preload(message, [:user, reply_to: :user])
+        message = Repo.preload(message, [:user, reply_to: :user, chat: [chat_members: :user]])
         # Notifica apenas quem está escutando este chat
         broadcast_chat_message(message.chat_id, {:created, message})
+        
+        # --- DISPARO DE PUSH PARA OS OUTROS MEMBROS ---
+        chat_members = message.chat.chat_members || []
+        
+        Enum.each(chat_members, fn member ->
+        	# Se o membro nao for quem enviou e nao mutou o chat
+        	if member.user_id != message.user_id && !member.is_muted? do
+        		recipient_scope = %Kgkm.Accounts.Scope{user: member.user}
+        		sender_name = (message.user && message.user.username) || "Alguém"
+        		
+        		Kgkm.Accounts.send_push_notification_to_user(
+        			recipient_scope,
+        			"Nova mensagem de #{sender_name}",
+        			message.content || "Enviou um anexo",
+        			"/chats/#{message.chat_id}"
+        			)
+        		end
+        	end)
+        	# --------------------
         {:ok, message}
 
       error ->
