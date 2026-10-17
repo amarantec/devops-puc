@@ -6,6 +6,7 @@ stages:
 
 variables:
   DB_PORT: 5432
+  DB_HOST: "postgres"
 
 cache:
   key: ${CI_COMMIT_REF_SLUG}
