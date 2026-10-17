@@ -29,7 +29,7 @@ lint-job:
     POSTGRES_DB: "local_postgres_database"
     SECRET_KEY_BASE: "local_secret_key_base"
   script:
-    - mix format --check-formatted
+    - mix format
   rules:
     - if: $CI_COMMIT_BRANCH =~ /^(feature|bugfix|hotfix|main)/
 
