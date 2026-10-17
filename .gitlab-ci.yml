@@ -45,6 +45,7 @@ test-job:
     POSTGRES_PASSWORD: "local_postgres_password"
     POSTGRES_DB: "local_postgres_database"
     SECRET_KEY_BASE: "local_secret_key_base"
+    DB_HOST: "postgres"
   before_script:
     - apt update -y && apt install -y postgresql-client
     - mix local.hex --force
