@@ -79,7 +79,7 @@ defmodule KgkmWeb.TopNav do
         <div class="flex-1 py-2">
           <ul class="list-none p-0 m-0">
             <li>
-            		<.link
+              <.link
                 href={~p"/chats"}
                 class="block px-5 py-3 text-base font-medium text-zinc-900 dark:text-zinc-100 border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
               >
@@ -87,7 +87,7 @@ defmodule KgkmWeb.TopNav do
               </.link>
             </li>
             <li>
-            		<.link
+              <.link
                 href={~p"/users/settings"}
                 class="block px-5 py-3 text-base font-medium text-zinc-900 dark:text-zinc-100 border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
               >

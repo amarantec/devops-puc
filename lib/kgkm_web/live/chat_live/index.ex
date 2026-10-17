@@ -392,15 +392,14 @@ defmodule KgkmWeb.ChatLive.Index do
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
     chats = load_user_chats(scope)
-    
-    
+
     if connected?(socket) do
       # Inscreve o usuário em TODOS os chats dele para escutar mensagens em background
       Enum.each(chats, fn chat ->
         Messages.subscribe_chat_messages(chat.id)
       end)
     end
-    
+
     {:ok,
      socket
      |> assign(:chats, chats)
@@ -432,18 +431,19 @@ defmodule KgkmWeb.ChatLive.Index do
   defp apply_params(socket, :show, %{"id" => chat_id}) do
     scope = socket.assigns.current_scope
 
-# Gerenciamento limpo de PubSub do chat anterior para o novo
+    # Gerenciamento limpo de PubSub do chat anterior para o novo
     if connected?(socket) do
       if active_chat = socket.assigns.active_chat do
         Phoenix.PubSub.unsubscribe(Kgkm.PubSub, "chat:#{active_chat.id}:messages")
       end
+
       Messages.subscribe_chat_messages(chat_id)
     end
 
     chat = Chats.get_chat!(scope, chat_id)
     messages = Messages.list_messages(chat_id, scope.user.id)
 
-# Zera as mensagens não lidas apenas do chat aberto preservando os outros contadores
+    # Zera as mensagens não lidas apenas do chat aberto preservando os outros contadores
     updated_chats =
       Enum.map(socket.assigns.chats, fn c ->
         c = Map.put_new(c, :unread_count, 0)
@@ -459,12 +459,12 @@ defmodule KgkmWeb.ChatLive.Index do
   end
 
   defp apply_params(socket, :index, _params) do
-  		if connected?(socket) do
-  			if active_chat = socket.assigns.active_chat do
-  				Phoenix.PubSub.unsubscribe(Kgkm.PubSub, "chat:#{active_chat.id}:messages")
-  			end
-  		end
-  		
+    if connected?(socket) do
+      if active_chat = socket.assigns.active_chat do
+        Phoenix.PubSub.unsubscribe(Kgkm.PubSub, "chat:#{active_chat.id}:messages")
+      end
+    end
+
     socket
     |> assign(:active_chat, nil)
     |> stream(:messages, [], reset: true)
@@ -939,12 +939,12 @@ defmodule KgkmWeb.ChatLive.Index do
         {:noreply, put_flash(socket, :error, "Erro ao excluir chat.")}
     end
   end
-  
+
   defp load_user_chats(scope) do
-  		Chats.list_user_chats(scope)
-  		|> Enum.map(fn chat ->
-  			# Garante que unread_count exista e seja numerico
-  			Map.put_new(chat, :unread_count, 0)
-  		end)
-  	end
+    Chats.list_user_chats(scope)
+    |> Enum.map(fn chat ->
+      # Garante que unread_count exista e seja numerico
+      Map.put_new(chat, :unread_count, 0)
+    end)
+  end
 end

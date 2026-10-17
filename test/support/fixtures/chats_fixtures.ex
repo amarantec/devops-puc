@@ -1,15 +1,15 @@
 defmodule Kgkm.ChatsFixtures do
-  @moduledoc"""
+  @moduledoc """
   This module defines test helpers for creating
   entities via the `Kgkm.Chats` context;
   """
-	alias Kgkm.Repo
+  alias Kgkm.Repo
   alias Kgkm.Chats.Chat
   alias Kgkm.Chats.ChatMember
   alias Kgkm.Messages.Message
   import Kgkm.AccountsFixtures
 
-  @doc"""
+  @doc """
   Generate a Chat item.
   """
   def direct_chat_fixture(user1, user2) do
@@ -21,9 +21,10 @@ defmodule Kgkm.ChatsFixtures do
           {:ok, chat}
         end
       end)
-      Repo.preload(chat, chat_members: :user)
+
+    Repo.preload(chat, chat_members: :user)
   end
-  
+
   def message_fixture(chat, user, attrs \\ %{}) do
     {:ok, message} =
       %Message{}

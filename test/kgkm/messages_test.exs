@@ -19,7 +19,7 @@ defmodule Kgkm.MessagesTest do
 
       # 2. Executa a limpeza e define o cleared_at para esse exato ponto no tempo
       assert {:ok, _} = Kgkm.Chats.clear_history_for_user(chat.id, user1.id)
-      
+
       chat_member = Repo.get_by!(Kgkm.Chats.ChatMember, chat_id: chat.id, user_id: user1.id)
       Repo.update!(Kgkm.Chats.ChatMember.changeset(chat_member, %{cleared_at: clear_time}))
 

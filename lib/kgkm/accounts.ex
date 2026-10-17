@@ -324,37 +324,40 @@ defmodule Kgkm.Accounts do
     |> User.avatar_changeset(%{avatar_url: avatar_url})
     |> Repo.update()
   end
-  
-  
+
   def save_push_subscription(user_id, attrs) do
-  		%PushSubscription{}
-  		|> PushSubscription.changeset(Map.put(attrs, "user_id", user_id))
-  		# Se ja existir o endpoint, atualiza (upsert)
-  		|> Repo.insert(
-  			on_conflict: {:replace, [:p256dh, :auth, :updated_at]},
-  			conflict_target: :endpoint
-  		)
+    %PushSubscription{}
+    |> PushSubscription.changeset(Map.put(attrs, "user_id", user_id))
+    # Se ja existir o endpoint, atualiza (upsert)
+    |> Repo.insert(
+      on_conflict: {:replace, [:p256dh, :auth, :updated_at]},
+      conflict_target: :endpoint
+    )
   end
-  
+
   def send_push_notification_to_user(%Scope{} = scope, title, body, url \\ "/chats") do
     subscriptions = Repo.all(from ps in PushSubscription, where: ps.user_id == ^scope.user.id)
-    
+
     IO.inspect(subscriptions, label: "SUBSCRIPTIONS FOUND FOR USER #{scope.user.id}")
 
-    payload = Jason.encode!(%{
-      title: title,
-      body: body,
-      url: url,
-      icon: "/images/icon-192.png"
-    })
+    payload =
+      Jason.encode!(%{
+        title: title,
+        body: body,
+        url: url,
+        icon: "/images/icon-192.png"
+      })
 
     # Garante que a configuração global exigida pela lib esteja sempre presente
     vapid_config = [
-      public_key: System.get_env("VAPID_PUBLIC_KEY") || "BDiDjrZuXPHF1pJ3oUlhgNyaYPpeUa9qBhNnVDKvOiS8IPDi8zzRAxhf9t6ZA7QfKZoHwjw0KTE1ihGaSXB3ob4",
-      private_key: System.get_env("VAPID_PRIVATE_KEY") || "OC-xzY4CkCyGgzcny_ECEs5sB-B-eTarfBBkaT0eoTc",
+      public_key:
+        System.get_env("VAPID_PUBLIC_KEY") ||
+          "BDiDjrZuXPHF1pJ3oUlhgNyaYPpeUa9qBhNnVDKvOiS8IPDi8zzRAxhf9t6ZA7QfKZoHwjw0KTE1ihGaSXB3ob4",
+      private_key:
+        System.get_env("VAPID_PRIVATE_KEY") || "OC-xzY4CkCyGgzcny_ECEs5sB-B-eTarfBBkaT0eoTc",
       subject: System.get_env("VAPID_SUBJECT") || "mailto:administrator@example.com"
     ]
-    
+
     Application.put_env(:web_push_encryption, :vapid_details, vapid_config)
 
     Enum.each(subscriptions, fn sub ->
@@ -364,11 +367,13 @@ defmodule Kgkm.Accounts do
       }
 
       case WebPushEncryption.send_web_push(payload, subscription_struct) do
-        {:ok, response} -> 
+        {:ok, response} ->
           IO.inspect(response, label: "PUSH SUCCESS")
           :ok
-        {:error, reason} -> 
+
+        {:error, reason} ->
           IO.inspect(reason, label: "PUSH ERROR")
+
           if to_string(reason) =~ "410" or to_string(reason) =~ "404" do
             Repo.delete(sub)
           end
