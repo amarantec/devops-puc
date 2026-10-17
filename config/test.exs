@@ -31,7 +31,7 @@ le not set."
 config :kgkm, Kgkm.Repo,
   username: db_username,
   password: db_password,
-  hostname: "localhost",
+  hostname: db_host,
   database: "kgkm_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
