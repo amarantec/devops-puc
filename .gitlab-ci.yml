@@ -97,7 +97,7 @@ docker-job:
     MIX_ENV: prod
     IMAGE_TAG: $CI_COMMIT_SHA
   before_script:
-    - echo "glpat-prnqI3DmrlxrwG00y3r3dWM6MQpvOjEKdTpwdzFqcw8.01.170ro8vyj" | docker login registry.gitlab.com -u amaran7e --password-stdin
+    - echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
     - docker build -t $CI_REGISTRY_IMAGE:$IMAGE_TAG .
     - docker push $CI_REGISTRY_IMAGE:$IMAGE_TAG
