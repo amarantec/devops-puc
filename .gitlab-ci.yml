@@ -41,6 +41,8 @@ test-job:
         POSTGRES_DB: "kgkm_test"
   needs: ["lint-job"]
   variables:
+    DB_USER: "postgres"
+    DB_PASSWORD: "postgres_password"
     POSTGRES_USER: "postgres"
     POSTGRES_PASSWORD: "postgres_password"
     POSTGRES_DB: "kgkm_test"
@@ -57,7 +59,7 @@ test-job:
     - MIX_ENV=test mix test
   rules:
     - if: $CI_COMMIT_BRANCH =~ /^(feature|bugfix|hotfix|main)/
-
+    
 build-job:
   stage: build
   extends: .default-elixir
