@@ -8,6 +8,7 @@ defmodule Kgkm.Messages.Message do
     field :content, :string
     field :is_saved, :boolean, default: false
     field :file_url, :string
+    field :status, Ecto.Enum, values: [:sent, :delivered, :read]
 
     belongs_to :chat, Kgkm.Chats.Chat
     belongs_to :user, Kgkm.Accounts.User
@@ -21,7 +22,7 @@ defmodule Kgkm.Messages.Message do
   @doc false
   def changeset(message, attrs, scope) do
     message
-    |> cast(attrs, [:content, :chat_id, :is_saved, :reply_to_id, :file_url])
+    |> cast(attrs, [:content, :chat_id, :is_saved, :reply_to_id, :file_url, :status])
     |> validate_required([:chat_id])
     |> validate_content_or_file()
     |> put_change(:user_id, scope.user.id)
