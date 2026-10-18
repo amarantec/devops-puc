@@ -109,4 +109,21 @@ defmodule Kgkm.Messages do
   def change_message(%Scope{} = scope, %Message{} = message, attrs \\ %{}) do
     Message.changeset(message, attrs, scope)
   end
+
+  def mark_chat_messages_as_read(chat_id, current_user_id) do
+    query =
+      from(m in Message,
+        where: m.chat_id == ^chat_id and m.user_id != ^current_user_id and m.status != :read
+      )
+
+    {updated_count, _} = Repo.update_all(query, set: [status: :read])
+
+    if updated_count > 0 do
+      Phoenix.PubSub.broadcast(
+        Kgkm.PubSub,
+        "chat:#{chat_id}:read",
+        {:messages_read, current_user_id}
+      )
+    end
+  end
 end
