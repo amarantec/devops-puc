@@ -50,11 +50,11 @@ window.addEventListener("copy_to_clipboard", (e) => {
     </svg> Copiado!
     `;
 
-      // Restaura o botão original após 1.5 segundos
-      setTimeout(() => {
-        button.classList.remove("bg-emerald-500", "text-white", "!border-emerald-500");
-        button.classList.add("bg-gray-200/70", "dark:bg-gray-700", "text-gray-700", "dark:text-gray-200");
-        button.innerHTML = originalHTML;
+    // Restaura o botão original após 1.5 segundos
+    setTimeout(() => {
+      button.classList.remove("bg-emerald-500", "text-white", "!border-emerald-500");
+      button.classList.add("bg-gray-200/70", "dark:bg-gray-700", "text-gray-700", "dark:text-gray-200");
+      button.innerHTML = originalHTML;
     }, 1500);
   }
 });
@@ -66,6 +66,12 @@ Hooks.MediaRecorder = {
     let isRecording = false;
 
     this.el.addEventListener("click", async () => {
+      // Se o usuário já negou antes, avisa sem floodar o navegador
+      if (localStorage.getItem("mic_permission") === "denied") {
+        alert("Permissão do microfone negada anteriormente. Altere nas configurações do navegador.");
+        return;
+      }
+      
       try {
         if (!isRecording) {
           // Iniciar Gravação
@@ -106,12 +112,10 @@ Hooks.MediaRecorder = {
         }
       } catch (err) {
         console.error("Erro ao acessar o microfone:", err);
-        alert("Não foi possível acessar o microfone. Verifique as permissões do navegador.");
       }
     });
   }
 }
-
 Hooks.CameraCapture = {
   mounted() {
     let videoEl = this.el.querySelector("#video-preview") || this.el.querySelector("video");
@@ -119,23 +123,28 @@ Hooks.CameraCapture = {
     let captureBtn = document.getElementById("capture-photo-btn");
     let mediaStream = null;
 
-    // Inicializa a câmera assim que o modal abre
+    if (localStorage.getItem("camera_permission") === "denied") {
+      console.warn("Acesso à câmera negado anteriormente.");
+      return;
+    }
+
     navigator.mediaDevices.getUserMedia({ video: true, audio: false })
       .then(stream => {
+        localStorage.setItem("camera_permission", "granted");
         mediaStream = stream;
+        this.mediaStream = stream;
         if (videoEl) {
           videoEl.srcObject = stream;
         }
       })
       .catch(err => {
+        localStorage.setItem("camera_permission", "denied");
         console.error("Erro ao acessar a câmera:", err);
-        alert("Não foi possível acessar a câmera do dispositivo.");
       });
 
-    // Capturar Foto
     if (captureBtn) {
       captureBtn.addEventListener("click", () => {
-        if (!videoEl) return;
+        if (!videoEl || !canvasEl) return;
         let context = canvasEl.getContext("2d");
         canvasEl.width = videoEl.videoWidth || 640;
         canvasEl.height = videoEl.videoHeight || 480;
@@ -143,20 +152,18 @@ Hooks.CameraCapture = {
 
         let base64data = canvasEl.toDataURL("image/jpeg", 0.9);
 
-        // Para a stream da câmera
         if (mediaStream) {
           mediaStream.getTracks().forEach(track => track.stop());
         }
 
-        // Envia a imagem capturada para o LiveView
         this.pushEvent("save_captured_image", { image_data: base64data });
       });
     }
 
-    // Guarda a stream para poder desligar se o componente desmontar
     this.mediaStream = mediaStream;
   },
   destroyed() {
+    // Garante que ao fechar o modal, a luz da câmera apaga imediatamente
     if (this.mediaStream) {
       this.mediaStream.getTracks().forEach(track => track.stop());
     }
@@ -266,6 +273,11 @@ Hooks.GetLocation = {
       this.getGPSPosition();
     });
 
+    // Se foi negado antes, nem tenta chamar o GPS para evitar loop
+    if (localStorage.getItem("location_permission") === "denied") {
+      return;
+    }
+
     // 3. Verifica cache no localStorage
     const savedCity = localStorage.getItem("current_city");
     if (savedCity) {
@@ -282,12 +294,14 @@ Hooks.GetLocation = {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          localStorage.setItem("location_permission", "granted"); // Salva sucesso
           hook.pushEventTo(hook.el, "location-resolved", {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude
           });
         },
         (error) => {
+          localStorage.setItem("location_permission", "denied"); // Salva recusa
           console.error("Geolocation error:", error);
           hook.pushEventTo(hook.el, "location-failed", { reason: error.message });
         },
@@ -318,27 +332,27 @@ function urlBase64ToUint8Array(base64String) {
 
 // Push Notificaition ativacao no browser
 if ('serviceWorker' in navigator && 'PushManager' in window) {
-    navigator.serviceWorker.ready.then(async (registration) => {
-        const publicVapidKey = "BDiDjrZuXPHF1pJ3oUlhgNyaYPpeUa9qBhNnVDKvOiS8IPDi8zzRAxhf9t6ZA7QfKZoHwjw0KTE1ihGaSXB3ob4";
-        
-        // Converte a chave VAPID para Uint8Array
-        const convertedKey = urlBase64ToUint8Array(publicVapidKey);
-        
-        const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: convertedKey
-        });
-        
-        // Envia a subscription para o backend via fetch ou LiveView hook
-        fetch('/api/push-subscriptions', {
-            method: 'POST',
-            body: JSON.stringify(subscription),
-            headers: {
-                'content-type': 'application/json',
-                'x-csrf-token': document.querySelector("meta[name='csrf-token']").getAttribute("content")
-            }
-        });
+  navigator.serviceWorker.ready.then(async (registration) => {
+    const publicVapidKey = "BDiDjrZuXPHF1pJ3oUlhgNyaYPpeUa9qBhNnVDKvOiS8IPDi8zzRAxhf9t6ZA7QfKZoHwjw0KTE1ihGaSXB3ob4";
+
+    // Converte a chave VAPID para Uint8Array
+    const convertedKey = urlBase64ToUint8Array(publicVapidKey);
+
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: convertedKey
     });
+
+    // Envia a subscription para o backend via fetch ou LiveView hook
+    fetch('/api/push-subscriptions', {
+      method: 'POST',
+      body: JSON.stringify(subscription),
+      headers: {
+        'content-type': 'application/json',
+        'x-csrf-token': document.querySelector("meta[name='csrf-token']").getAttribute("content")
+      }
+    });
+  });
 }
 
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
