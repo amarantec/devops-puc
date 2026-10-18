@@ -38,10 +38,13 @@ test-job:
       variables:
         POSTGRES_USER: "postgres"
         POSTGRES_PASSWORD: "postgres_password"
+        POSTGRES_DB: "kgkm_test"
   needs: ["lint-job"]
   variables:
     POSTGRES_USER: "postgres"
     POSTGRES_PASSWORD: "postgres_password"
+    POSTGRES_DB: "kgkm_test"
+    SECRET_KEY_BASE: "local_secret_key_base"
   before_script:
     - apt update -y && apt install -y postgresql-client
     - mix local.hex --force
