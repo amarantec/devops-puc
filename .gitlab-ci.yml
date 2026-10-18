@@ -35,6 +35,10 @@ test-job:
   services:
     - name: postgres:18
       alias: postgres
+      variables:
+        POSTGRES_USER: $POSTGRES_USER       # Pega do painel do GitLab
+        POSTGRES_PASSWORD: $POSTGRES_PASSWORD # Pega do painel do GitLab
+        POSTGRES_DB: $POSTGRES_DB         # Pega do painel do GitLab
   needs: ["lint-job"]
   before_script:
     - apt update -y && apt install -y postgresql-client
