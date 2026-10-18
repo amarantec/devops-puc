@@ -67,6 +67,12 @@ build-job:
   stage: build
   extends: .default-elixir
   needs: ["test-job"]
+  variables:
+    POSTGRES_USER: "amarante"
+    POSTGRES_PASSWORD: "amarantepostgrespassword"
+    POSTGRES_DB: "kgkm_dev"
+    SECRET_KEY_BASE: "vL42mOJ4IPRNTCCDS4nLXGhFYa3P8LrdOTXmOSiTcpLolSd48Pk7/GMSUwP+CAwf"
+    DATABASE_URL: "ecto://amarante:amarantepostgrespassword@postgres:5432/kgkm_dev"
   script:
     - echo "Build the project"
     - mix local.hex --force
