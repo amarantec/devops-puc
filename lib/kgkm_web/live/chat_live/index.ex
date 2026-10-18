@@ -51,7 +51,7 @@ defmodule KgkmWeb.ChatLive.Index do
                   <span>Log out</span>
                 </:item>
               </.dropdown>
-              
+
     <!-- Campo de Busca de Usuários -->
               <form phx-change="search_user" phx-submit="search_user" class="relative flex-1">
                 <input
@@ -68,7 +68,7 @@ defmodule KgkmWeb.ChatLive.Index do
                 />
               </form>
             </div>
-            
+
     <!-- Resultados da Busca -->
             <%= if @search_query != "" do %>
               <div class="p-2 bg-orange-50/50 dark:bg-indigo-950/20 border-b border-gray-200 dark:border-gray-800 shrink-0">
@@ -97,14 +97,14 @@ defmodule KgkmWeb.ChatLive.Index do
                 <% end %>
               </div>
             <% end %>
-            
+
     <!-- Lista de conversas do usuário -->
             <div class="flex-1 overflow-y-auto p-2 space-y-1">
               <div :for={chat <- @chats} class="relative group">
                 <% info = chat_display_info(chat, @current_scope.user.id) %>
 
                 <div class={"flex items-center gap-3 p-2.5 rounded-2xl transition #{if @active_chat && @active_chat.id == chat.id, do: "bg-orange-500 text-white dark:bg-indigo-500", else: "hover:bg-gray-100 dark:hover:bg-gray-800"}"}>
-                  
+
     <!-- Link que seleciona o chat -->
                   <.link patch={~p"/chats/#{chat.id}"} class="flex items-center gap-3 flex-1 min-w-0">
                     <div class={"user-avatar overflow-hidden #{if @active_chat && @active_chat.id == chat.id, do: "!bg-white/20 !text-white"}"}>
@@ -124,14 +124,14 @@ defmodule KgkmWeb.ChatLive.Index do
                       </div>
                     </div>
                   </.link>
-                  
+
     <!-- BADGE DE NÃO LIDAS -->
                   <%= if chat.unread_count > 0 do %>
                     <span class="bg-orange-500 dark:bg-indigo-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0">
                       {chat.unread_count}
                     </span>
                   <% end %>
-                  
+
     <!-- COMPONENTE DO DROPDOWN INDIVIDUAL -->
                   <% member = Enum.find(chat.chat_members, &(&1.user_id == @current_scope.user.id)) %>
                   <% is_muted? = if member, do: member.is_muted?, else: false %>
@@ -141,12 +141,12 @@ defmodule KgkmWeb.ChatLive.Index do
               </div>
             </div>
           </aside>
-          
+
     <!-- Area de Mensagens da Sala Ativa -->
           <main class={"chat-main-responsive #{if @active_chat, do: "flex", else: "hidden md:flex"}"}>
             <%= if @active_chat do %>
               <% active_info = chat_display_info(@active_chat, @current_scope.user.id) %>
-              
+
     <!-- Subcabeçalho da Conversa -->
               <div class="chat-subheader p-3 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center gap-3 z-10 shrink-0">
                 <.link
@@ -168,11 +168,12 @@ defmodule KgkmWeb.ChatLive.Index do
                   <p class="text-xs text-gray-400">em tempo real</p>
                 </div>
               </div>
-              
+
     <!-- Feed de Mensagens (Stream com Scroll Independente e Botão FAB de Scroll) -->
               <div class="relative flex-1 min-h-0 flex flex-col">
                 <div
-                  id="messages-feed"
+                  :if={@active_chat}
+                  id={"messages-feed-#{@active_chat.id}"}
                   phx-hook="ChatScroll"
                   phx-update="stream"
                   class="flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col space-y-2"
@@ -257,7 +258,7 @@ defmodule KgkmWeb.ChatLive.Index do
                     </div>
                   </div>
                 </div>
-                
+
     <!-- Botão flutuante para descer ao fim do chat (Scroll FAB) -->
                 <div class="sticky bottom-4 self-end mr-2 z-20 mt-auto">
                   <button
@@ -273,7 +274,7 @@ defmodule KgkmWeb.ChatLive.Index do
                   </button>
                 </div>
               </div>
-              
+
     <!-- Rodapé fixo: Caixas de citação, previews e inputs -->
               <div class="shrink-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
                 <%= if @replying_to do %>
@@ -372,14 +373,17 @@ defmodule KgkmWeb.ChatLive.Index do
           </main>
         </div>
       </div>
-      
+
     <!-- MODAIS DO SISTEMA DE CHAT -->
       <KgkmWeb.CoreComponents.group_modal
         show={@show_group_modal?}
         group_search_results={@group_search_results}
         selected_group_members={@selected_group_members}
       />
-      <KgkmWeb.CoreComponents.camera_modal show={@show_camera_modal?} />
+      <%= if @show_camera_modal? do %>
+        <KgkmWeb.CoreComponents.camera_modal show={@show_camera_modal?} />
+      <% end %>
+
       <KgkmWeb.CoreComponents.saved_messages_modal
         show={@show_saved_modal?}
         saved_messages={@saved_messages}
@@ -455,7 +459,8 @@ defmodule KgkmWeb.ChatLive.Index do
     |> notify_total_unread()
     |> assign(:active_chat, chat)
     |> assign_message_form(%Message{chat_id: chat.id})
-    |> stream(:messages, messages, reset: true)
+    |> stream(:messages, [], reset: true)
+    |> stream(:messages, messages)
   end
 
   defp apply_params(socket, :index, _params) do
