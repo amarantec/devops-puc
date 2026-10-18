@@ -588,7 +588,7 @@ defmodule KgkmWeb.CoreComponents do
       phx-mounted={@show && show_modal(@id)}
       phx-remove={hide_modal(@id)}
     >
-      
+
     <!-- Backdrop (fundo escurecido com blur suave) -->
       <div
         id="{@id}-bg"
@@ -596,7 +596,7 @@ defmodule KgkmWeb.CoreComponents do
         aria-hidden="true"
         phx-click={@on_cancel || hide_modal(@id)}
       />
-      
+
     <!-- Container de alinhamento -->
       <div class="fixed inset-0 z-10 overflow-y-auto p-4 sm:p-6 md:p-12 flex items-center justify-center">
         <!-- corpo do modal -->
@@ -612,7 +612,7 @@ defmodule KgkmWeb.CoreComponents do
           >
             <.icon name="hero-x-mark" class="w-5 h-5" />
           </button>
-          
+
     <!-- Slot, onde entra o conteudo -->
           <div class="mt-10">
             {render_slot(@inner_block)}
@@ -832,9 +832,9 @@ defmodule KgkmWeb.CoreComponents do
 
   def camera_modal(assigns) do
     ~H"""
-    <div class={["modal-backdrop", if(!@show, do: "hidden")]}>
-      <div class="modal-container max-w-lg p-4 space-y-4">
-        <div class="modal-header !px-2 !py-2">
+    <div class={["fixed inset-0 z-50 bg-black/60 backdrop-blur-sm items-center justify-center p-4", if(@show, do: "flex", else: "hidden")]}>
+      <div class="bg-white dark:bg-gray-900 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-gray-100 dark:border-gray-800">
+        <div class="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-800">
           <div class="flex items-center gap-2">
             <div class="p-2 rounded-xl bg-orange-500/10 text-orange-500">
               <.icon name="hero-camera" class="w-5 h-5" />
