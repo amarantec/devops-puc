@@ -6,6 +6,7 @@ defmodule KgkmWeb.ChatLive.Index do
   alias Kgkm.Messages
   alias Kgkm.Messages.Message
   import KgkmWeb.CoreComponents
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -51,7 +52,7 @@ defmodule KgkmWeb.ChatLive.Index do
                   <span>Log out</span>
                 </:item>
               </.dropdown>
-
+              
     <!-- Campo de Busca de Usuários -->
               <form phx-change="search_user" phx-submit="search_user" class="relative flex-1">
                 <input
@@ -68,7 +69,7 @@ defmodule KgkmWeb.ChatLive.Index do
                 />
               </form>
             </div>
-
+            
     <!-- Resultados da Busca -->
             <%= if @search_query != "" do %>
               <div class="p-2 bg-orange-50/50 dark:bg-indigo-950/20 border-b border-gray-200 dark:border-gray-800 shrink-0">
@@ -97,14 +98,14 @@ defmodule KgkmWeb.ChatLive.Index do
                 <% end %>
               </div>
             <% end %>
-
+            
     <!-- Lista de conversas do usuário -->
             <div class="flex-1 overflow-y-auto p-2 space-y-1">
               <div :for={chat <- @chats} class="relative group">
                 <% info = chat_display_info(chat, @current_scope.user.id) %>
 
                 <div class={"flex items-center gap-3 p-2.5 rounded-2xl transition #{if @active_chat && @active_chat.id == chat.id, do: "bg-orange-500 text-white dark:bg-indigo-500", else: "hover:bg-gray-100 dark:hover:bg-gray-800"}"}>
-
+                  
     <!-- Link que seleciona o chat -->
                   <.link patch={~p"/chats/#{chat.id}"} class="flex items-center gap-3 flex-1 min-w-0">
                     <div class={"user-avatar overflow-hidden #{if @active_chat && @active_chat.id == chat.id, do: "!bg-white/20 !text-white"}"}>
@@ -124,14 +125,14 @@ defmodule KgkmWeb.ChatLive.Index do
                       </div>
                     </div>
                   </.link>
-
+                  
     <!-- BADGE DE NÃO LIDAS -->
                   <%= if chat.unread_count > 0 do %>
                     <span class="bg-orange-500 dark:bg-indigo-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0">
                       {chat.unread_count}
                     </span>
                   <% end %>
-
+                  
     <!-- COMPONENTE DO DROPDOWN INDIVIDUAL -->
                   <% member = Enum.find(chat.chat_members, &(&1.user_id == @current_scope.user.id)) %>
                   <% is_muted? = if member, do: member.is_muted?, else: false %>
@@ -141,12 +142,12 @@ defmodule KgkmWeb.ChatLive.Index do
               </div>
             </div>
           </aside>
-
+          
     <!-- Area de Mensagens da Sala Ativa -->
           <main class={"chat-main-responsive #{if @active_chat, do: "flex", else: "hidden md:flex"}"}>
             <%= if @active_chat do %>
               <% active_info = chat_display_info(@active_chat, @current_scope.user.id) %>
-
+              
     <!-- Subcabeçalho da Conversa -->
               <div class="chat-subheader p-3 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center gap-3 z-10 shrink-0">
                 <.link
@@ -165,10 +166,16 @@ defmodule KgkmWeb.ChatLive.Index do
                 </div>
                 <div>
                   <h3 class="text-sm font-bold leading-tight">{active_info.title}</h3>
-                  <p class="text-xs text-gray-400">em tempo real</p>
+                  <p class="text-xs text-orange-500 dark:text-indigo-500 font-medium animate-pulse">
+                    <%= if @typing_user do %>
+                      {@typing_user} está digitando...
+                    <% else %>
+                      em tempo real
+                    <% end %>
+                  </p>
                 </div>
               </div>
-
+              
     <!-- Feed de Mensagens (Stream com Scroll Independente e Botão FAB de Scroll) -->
               <div class="relative flex-1 min-h-0 flex flex-col">
                 <div
@@ -258,7 +265,7 @@ defmodule KgkmWeb.ChatLive.Index do
                     </div>
                   </div>
                 </div>
-
+                
     <!-- Botão flutuante para descer ao fim do chat (Scroll FAB) -->
                 <div class="sticky bottom-4 self-end mr-2 z-20 mt-auto">
                   <button
@@ -274,7 +281,7 @@ defmodule KgkmWeb.ChatLive.Index do
                   </button>
                 </div>
               </div>
-
+              
     <!-- Rodapé fixo: Caixas de citação, previews e inputs -->
               <div class="shrink-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
                 <%= if @replying_to do %>
@@ -373,7 +380,7 @@ defmodule KgkmWeb.ChatLive.Index do
           </main>
         </div>
       </div>
-
+      
     <!-- MODAIS DO SISTEMA DE CHAT -->
       <KgkmWeb.CoreComponents.group_modal
         show={@show_group_modal?}
@@ -415,6 +422,7 @@ defmodule KgkmWeb.ChatLive.Index do
      |> assign(:group_search_results, [])
      |> assign(:selected_group_members, [])
      |> assign(:replying_to, nil)
+     |> assign(:typing_user, nil)
      |> allow_upload(:chat_file,
        accept: ~w(.jpg .jpeg .png .pdf .doc  .docx .mp3 .wav .mp4),
        max_entries: 1,
@@ -439,9 +447,11 @@ defmodule KgkmWeb.ChatLive.Index do
     if connected?(socket) do
       if active_chat = socket.assigns.active_chat do
         Phoenix.PubSub.unsubscribe(Kgkm.PubSub, "chat:#{active_chat.id}:messages")
+        Phoenix.PubSub.unsubscribe(Kgkm.PubSub, "chat:#{active_chat.id}:typing")
       end
 
       Messages.subscribe_chat_messages(chat_id)
+      Phoenix.PubSub.subscribe(Kgkm.PubSub, "chat:#{chat_id}:typing")
     end
 
     chat = Chats.get_chat!(scope, chat_id)
@@ -458,6 +468,8 @@ defmodule KgkmWeb.ChatLive.Index do
     |> assign(:chats, updated_chats)
     |> notify_total_unread()
     |> assign(:active_chat, chat)
+    # Reseta o estado de digitação ao trocar de chat
+    |> assign(:typing_user, nil)
     |> assign_message_form(%Message{chat_id: chat.id})
     |> stream(:messages, [], reset: true)
     |> stream(:messages, messages)
@@ -607,6 +619,15 @@ defmodule KgkmWeb.ChatLive.Index do
   def handle_event("validate", %{"message" => message_params}, socket) do
     scope = socket.assigns.current_scope
 
+    # Dispara o evento de digitação via PubSub
+    if chat = socket.assigns.active_chat do
+      Phoenix.PubSub.broadcast(
+        Kgkm.PubSub,
+        "chat:#{chat.id}:typing",
+        {:typing, scope.user.username}
+      )
+    end
+
     changeset =
       Messages.change_message(
         scope,
@@ -701,8 +722,6 @@ defmodule KgkmWeb.ChatLive.Index do
        |> notify_total_unread()}
     end
   end
-
-  def handle_info(_other, socket), do: {:noreply, socket}
 
   # Funcoes auxiliares
   defp assign_message_form(socket, %Message{} = message) do
@@ -952,4 +971,27 @@ defmodule KgkmWeb.ChatLive.Index do
       Map.put_new(chat, :unread_count, 0)
     end)
   end
+
+  @impl true
+  def handle_info({:typing, username}, socket) do
+    current_username = socket.assigns.current_scope.user.username
+
+    # Ignora se foi o proprio usuario que disparou
+    if username == current_username do
+      {:noreply, socket}
+    else
+      socket = assign(socket, :typing_user, username)
+
+      # Opcional: Limpa o texto "digitando..." apos 3 segundos sem novos eventos
+      Process.send_after(self(), :clear_typing, 3000)
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info(:clear_typing, socket) do
+    {:noreply, assign(socket, :typing_user, nil)}
+  end
+
+  def handle_info(_other, socket), do: {:noreply, socket}
 end
