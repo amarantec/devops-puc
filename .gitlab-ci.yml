@@ -40,7 +40,7 @@ test-job:
   services:
     - name: postgres:18
       alias: postgres
-      environment:
+      variables:
         POSTGRES_USER: "local_postgres_user"
         POSTGRES_PASSWORD: "local_postgres_password"
         POSTGRES_DB: "local_postgres_database"
