@@ -24,6 +24,11 @@ cache:
 lint-job:
   stage: lint
   extends: .default-elixir 
+  variables:
+    POSTGRES_USER: "postgres"
+    POSTGRES_PASSWORD: "postgres_password"
+    POSTGRES_DB: "kgkm_test"
+    SECRET_KEY_BASE: "local_secret_key_base"
   script:
     - mix format
   rules:
@@ -41,8 +46,6 @@ test-job:
         POSTGRES_DB: "kgkm_test"
   needs: ["lint-job"]
   variables:
-    DB_USER: "postgres"
-    DB_PASSWORD: "postgres_password"
     POSTGRES_USER: "postgres"
     POSTGRES_PASSWORD: "postgres_password"
     POSTGRES_DB: "kgkm_test"
@@ -59,7 +62,7 @@ test-job:
     - MIX_ENV=test mix test
   rules:
     - if: $CI_COMMIT_BRANCH =~ /^(feature|bugfix|hotfix|main)/
-    
+
 build-job:
   stage: build
   extends: .default-elixir
@@ -88,11 +91,9 @@ docker-job:
     MIX_ENV: prod
     IMAGE_TAG: $CI_COMMIT_SHA
   before_script:
-    - echo "$GLCR_PASSWORD" |  docker login registry.gitlab.com -u $GLCR_USERNAME --password-stdin
+    - echo "glpat-prnqI3DmrlxrwG00y3r3dWM6MQpvOjEKdTpwdzFqcw8.01.170ro8vyj" | docker login registry.gitlab.com -u amaran7e --password-stdin
   script:
     - docker build -t $CI_REGISTRY_IMAGE:$IMAGE_TAG .
     - docker push $CI_REGISTRY_IMAGE:$IMAGE_TAG
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
-
-
