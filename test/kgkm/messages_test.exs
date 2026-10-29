@@ -8,7 +8,6 @@ defmodule Kgkm.MessagesTest do
   alias Kgkm.Chats
   alias Kgkm.Accounts.Scope
 
-
   describe "messages" do
     test "list_messages/2 respects user cleared_at timestamp" do
       user1 = user_fixture()
@@ -62,27 +61,34 @@ defmodule Kgkm.MessagesTest do
       scope1 = %Scope{user: user1}
       scope2 = %Scope{user: user2}
 
-     # Usa o scope1 para criar o chat direto
+      # Usa o scope1 para criar o chat direto
       {:ok, chat} = Chats.find_or_create_direct_chat(scope1, user2.id)
 
       %{user1: user1, user2: user2, scope1: scope1, scope2: scope2, chat: chat}
     end
 
-    test "marca apenas as mensagens do outro usuario como lidas e dispara PubSub", %{user1: user1, scope1: scope1, scope2: scope2, chat: chat} do
+    test "marca apenas as mensagens do outro usuario como lidas e dispara PubSub", %{
+      user1: user1,
+      scope1: scope1,
+      scope2: scope2,
+      chat: chat
+    } do
       # Inscreve o processo atual no canal PubSub de leitura do chat para testar a notificação
       Phoenix.PubSub.subscribe(Kgkm.PubSub, "chat:#{chat.id}:read")
 
       # Usuario 2 envia uma mensagem para o usuario 1 usando o scope2 correto
-      {:ok, msg_from_user2} = Messages.create_message(scope2, %{
-        "chat_id" => chat.id,
-        "content" => "Ola do user2"
-      })
+      {:ok, msg_from_user2} =
+        Messages.create_message(scope2, %{
+          "chat_id" => chat.id,
+          "content" => "Ola do user2"
+        })
 
       # Usuário 1 envia uma mensagem para o Usuário 2 usando o scope1 correto
-      {:ok, msg_from_user1} = Messages.create_message(scope1, %{
-        "chat_id" => chat.id,
-        "content" => "Ola do user1"
-      })
+      {:ok, msg_from_user1} =
+        Messages.create_message(scope1, %{
+          "chat_id" => chat.id,
+          "content" => "Ola do user1"
+        })
 
       # Verifica que o status inicial de ambas é :sent
       assert Repo.get(Message, msg_from_user2.id).status == :sent

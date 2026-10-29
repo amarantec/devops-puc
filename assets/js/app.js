@@ -355,6 +355,43 @@ if ('serviceWorker' in navigator && 'PushManager' in window) {
   });
 }
 
+Hooks.AudioPlayer = {
+  mounted() {
+    const audio = this.el;
+    const msgId = audio.id.replace("audio-player-", "");
+    const playBtn = document.getElementById(`play-btn-${msgId}`);
+    const progressBar = document.getElementById(`progress-${msgId}`);
+    const timeLabel = document.getElementById(`time-${msgId}`);
+    const durationLabel = document.getElementById(`duration-${msgId}`);
+
+    // Exibe a duração total assim que o áudio carregar
+    audio.addEventListener("loadedmetadata", () => {
+      if (audio.duration && durationLabel) {
+        const minutes = Math.floor(audio.duration / 60);
+        const seconds = Math.floor(audio.duration % 60).toString().padStart(2, '0');
+        durationLabel.textContent = `${minutes}:${seconds}`;
+      }
+    });
+
+    audio.addEventListener("timeupdate", () => {
+      if (audio.duration) {
+        const progress = (audio.currentTime / audio.duration) * 100;
+        if (progressBar) progressBar.style.width = `${progress}%`;
+        
+        const minutes = Math.floor(audio.currentTime / 60);
+        const seconds = Math.floor(audio.currentTime % 60).toString().padStart(2, '0');
+        if (timeLabel) timeLabel.textContent = `${minutes}:${seconds}`;
+      }
+    });
+
+    audio.addEventListener("ended", () => {
+      if (playBtn) playBtn.innerHTML = "▶";
+      if (progressBar) progressBar.style.width = "0%";
+      if (timeLabel) timeLabel.textContent = "0:00";
+    });
+  }
+};
+
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html"
 // Establish Phoenix Socket and LiveView configuration.

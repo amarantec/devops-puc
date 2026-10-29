@@ -52,7 +52,7 @@ defmodule KgkmWeb.ChatLive.Index do
                   <span>Log out</span>
                 </:item>
               </.dropdown>
-
+              
     <!-- Campo de Busca de Usuários -->
               <form phx-change="search_user" phx-submit="search_user" class="relative flex-1">
                 <input
@@ -69,7 +69,7 @@ defmodule KgkmWeb.ChatLive.Index do
                 />
               </form>
             </div>
-
+            
     <!-- Resultados da Busca -->
             <%= if @search_query != "" do %>
               <div class="p-2 bg-orange-50/50 dark:bg-indigo-950/20 border-b border-gray-200 dark:border-gray-800 shrink-0">
@@ -98,14 +98,14 @@ defmodule KgkmWeb.ChatLive.Index do
                 <% end %>
               </div>
             <% end %>
-
+            
     <!-- Lista de conversas do usuário -->
             <div class="flex-1 overflow-y-auto p-2 space-y-1">
               <div :for={chat <- @chats} class="relative group">
                 <% info = chat_display_info(chat, @current_scope.user.id) %>
 
                 <div class={"flex items-center gap-3 p-2.5 rounded-2xl transition #{if @active_chat && @active_chat.id == chat.id, do: "bg-orange-500 text-white dark:bg-indigo-500", else: "hover:bg-gray-100 dark:hover:bg-gray-800"}"}>
-
+                  
     <!-- Link que seleciona o chat -->
                   <.link patch={~p"/chats/#{chat.id}"} class="flex items-center gap-3 flex-1 min-w-0">
                     <div class={"user-avatar overflow-hidden #{if @active_chat && @active_chat.id == chat.id, do: "!bg-white/20 !text-white"}"}>
@@ -125,14 +125,14 @@ defmodule KgkmWeb.ChatLive.Index do
                       </div>
                     </div>
                   </.link>
-
+                  
     <!-- BADGE DE NÃO LIDAS -->
                   <%= if chat.unread_count > 0 do %>
                     <span class="bg-orange-500 dark:bg-indigo-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0">
                       {chat.unread_count}
                     </span>
                   <% end %>
-
+                  
     <!-- COMPONENTE DO DROPDOWN INDIVIDUAL -->
                   <% member = Enum.find(chat.chat_members, &(&1.user_id == @current_scope.user.id)) %>
                   <% is_muted? = if member, do: member.is_muted?, else: false %>
@@ -142,12 +142,12 @@ defmodule KgkmWeb.ChatLive.Index do
               </div>
             </div>
           </aside>
-
+          
     <!-- Area de Mensagens da Sala Ativa -->
           <main class={"chat-main-responsive #{if @active_chat, do: "flex", else: "hidden md:flex"}"}>
             <%= if @active_chat do %>
               <% active_info = chat_display_info(@active_chat, @current_scope.user.id) %>
-
+              
     <!-- Subcabeçalho da Conversa -->
               <div class="chat-subheader p-3 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center gap-3 z-10 shrink-0">
                 <.link
@@ -175,7 +175,7 @@ defmodule KgkmWeb.ChatLive.Index do
                   </p>
                 </div>
               </div>
-
+              
     <!-- Feed de Mensagens (Stream com Scroll Independente e Botão FAB de Scroll) -->
               <div class="relative flex-1 min-h-0 flex flex-col">
                 <div
@@ -227,11 +227,87 @@ defmodule KgkmWeb.ChatLive.Index do
                               />
                             </div>
                           <% else %>
-                            <%= if ext in [".mp3", ".wav", ".ogg"] do %>
-                              <div class="mb-2 min-w-[200px]">
-                                <audio controls class="w-full h-10">
-                                  <source src={msg.file_url} />
+                            <%= if ext in [".mp3", ".wav", ".ogg", ".webm"] do %>
+                              <div class="mb-2 w-full min-w-[240px] flex flex-col gap-2 p-2.5 rounded-2xl bg-black/10 dark:bg-white/10 backdrop-blur-sm">
+                                <audio
+                                  id={"audio-player-#{msg.id}"}
+                                  src={msg.file_url}
+                                  class="hidden"
+                                  phx-hook="AudioPlayer"
+                                >
                                 </audio>
+                                
+    <!-- Linha superior: Botão Play/Pause e Barra de Progresso -->
+                                <div class="flex items-center gap-3 w-full">
+                                  <button
+                                    type="button"
+                                    id={"play-btn-#{msg.id}"}
+                                    class="w-9 h-9 rounded-full bg-white dark:bg-gray-800 text-orange-500 dark:text-indigo-400 flex items-center justify-center shadow-md shrink-0 cursor-pointer hover:scale-105 transition"
+                                    onclick={"
+          const audio = document.getElementById('audio-player-#{msg.id}');
+          if (audio.paused) { audio.play(); this.innerHTML = '⏸'; }
+          else { audio.pause(); this.innerHTML = '▶'; }
+        "}
+                                  >
+                                    ▶
+                                  </button>
+
+                                  <div class="flex-1 flex flex-col gap-1 min-w-0">
+                                    <!-- Barra de Progresso Clicável -->
+                                    <div
+                                      id={"progress-container-#{msg.id}"}
+                                      class="w-full bg-black/20 dark:bg-white/20 h-2 rounded-full overflow-hidden relative cursor-pointer group"
+                                      onclick={"
+            const audio = document.getElementById('audio-player-#{msg.id}');
+            const rect = this.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const width = rect.width;
+            if (audio.duration) {
+              audio.currentTime = (clickX / width) * audio.duration;
+            }
+          "}
+                                    >
+                                      <div
+                                        id={"progress-#{msg.id}"}
+                                        class="bg-orange-500 dark:bg-indigo-400 h-full w-0 transition-all duration-75"
+                                      >
+                                      </div>
+                                    </div>
+
+                                    <div class="flex justify-between items-center text-[10px] opacity-80 px-0.5">
+                                      <span id={"time-#{msg.id}"}>0:00</span>
+                                      <span id={"duration-#{msg.id}"}>--:--</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+    <!-- Linha inferior: Controles de Velocidade compactos -->
+                                <div class="flex items-center justify-between pt-1 border-t border-black/5 dark:border-white/5 text-[10px]">
+                                  <span class="opacity-70 font-medium">Velocidade</span>
+                                  <div class="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      class="px-2 py-0.5 rounded-md bg-black/10 dark:bg-white/10 hover:bg-orange-500 hover:text-white transition cursor-pointer font-bold"
+                                      onclick={"document.getElementById('audio-player-#{msg.id}').playbackRate = 1.0"}
+                                    >
+                                      1x
+                                    </button>
+                                    <button
+                                      type="button"
+                                      class="px-2 py-0.5 rounded-md bg-black/10 dark:bg-white/10 hover:bg-orange-500 hover:text-white transition cursor-pointer font-bold"
+                                      onclick={"document.getElementById('audio-player-#{msg.id}').playbackRate = 1.5"}
+                                    >
+                                      1.5x
+                                    </button>
+                                    <button
+                                      type="button"
+                                      class="px-2 py-0.5 rounded-md bg-black/10 dark:bg-white/10 hover:bg-orange-500 hover:text-white transition cursor-pointer font-bold"
+                                      onclick={"document.getElementById('audio-player-#{msg.id}').playbackRate = 2.0"}
+                                    >
+                                      2x
+                                    </button>
+                                  </div>
+                                </div>
                               </div>
                             <% else %>
                               <div class="mb-2 p-3 rounded-2xl bg-black/5 dark:bg-white/5 flex items-center justify-between gap-3 min-w-[200px]">
@@ -280,7 +356,7 @@ defmodule KgkmWeb.ChatLive.Index do
                     </div>
                   </div>
                 </div>
-
+                
     <!-- Botão flutuante para descer ao fim do chat (Scroll FAB) -->
                 <div class="sticky bottom-4 self-end mr-2 z-20 mt-auto">
                   <button
@@ -296,7 +372,7 @@ defmodule KgkmWeb.ChatLive.Index do
                   </button>
                 </div>
               </div>
-
+              
     <!-- Rodapé fixo: Caixas de citação, previews e inputs -->
               <div class="shrink-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
                 <%= if @replying_to do %>
@@ -395,7 +471,7 @@ defmodule KgkmWeb.ChatLive.Index do
           </main>
         </div>
       </div>
-
+      
     <!-- MODAIS DO SISTEMA DE CHAT -->
       <KgkmWeb.CoreComponents.group_modal
         show={@show_group_modal?}
