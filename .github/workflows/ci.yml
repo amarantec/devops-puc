@@ -1,0 +1,156 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - 'feature**'
+      - 'bugfix**'
+      - 'hotfix**'
+      - 'main'
+
+env:
+  DB_PORT: 5432
+  DB_HOST: "postgres"
+
+jobs:
+  lint-job:
+    runs-on: ubuntu-latest
+    container:
+      image: elixir:1.19.0
+    env:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres_password"
+      POSTGRES_DB: "kgkm_test"
+      SECRET_KEY_BASE: "local_secret_key_base"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Mix Dependencies and Build
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ github.ref_name }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ github.ref_name }}-
+
+      - name: Setup Elixir environment & Run Lint
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get
+          mix format --check
+
+  test-job:
+    needs: lint-job
+    runs-on: ubuntu-latest
+    container:
+      image: elixir:1.19.0
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: "postgres"
+          POSTGRES_PASSWORD: "postgres_password"
+          POSTGRES_DB: "kgkm_test"
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres_password"
+      POSTGRES_DB: "kgkm_test"
+      SECRET_KEY_BASE: "local_secret_key_base"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Mix Dependencies and Build
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ github.ref_name }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ github.ref_name }}-
+
+      - name: Install Dependencies and Setup Database
+        run: |
+          apt update -y && apt install -y postgresql-client
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get
+          until pg_isready -h $DB_HOST -U $POSTGRES_USER; do sleep 2; done
+          MIX_ENV=test mix ecto.create
+          MIX_ENV=test mix ecto.migrate
+
+      - name: Run Tests
+        run: MIX_ENV=test mix test
+
+  build-job:
+    needs: test-job
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    container:
+      image: elixir:1.19.0
+    env:
+      POSTGRES_USER: "amarante"
+      POSTGRES_PASSWORD: "amarantepostgrespassword"
+      POSTGRES_DB: "kgkm_dev"
+      SECRET_KEY_BASE: "vL42mOJ4IPRNTCCDS4nLXGhFYa3P8LrdOTXmOSiTcpLolSd48Pk7/GMSUwP+CAwf"
+      DATABASE_URL: "ecto://amarante:amarantepostgrespassword@postgres:5432/kgkm_dev"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Mix Dependencies and Build
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ github.ref_name }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ github.ref_name }}-
+
+      - name: Build Project
+        run: |
+          echo "Build the project"
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get
+          mix compile --force
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: elixir-build
+          path: _build
+          retention-days: 1
+
+  docker-job:
+    needs: build-job
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
