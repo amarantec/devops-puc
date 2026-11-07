@@ -132,7 +132,6 @@ locals {
       postgres:18
 
     echo "baixa e executa a imagem do app que foi gerada no CI no github"
-    # Se o pacote no GHCR for público, o pull funciona direto sem login
     docker pull ghcr.io/amarantec/devops-puc:latest
 
     docker run -d --name kgkm-app \
@@ -146,7 +145,7 @@ locals {
     sleep 15
     docker exec kgkm-app /app/bin/kgkm eval "Kgkm.Release.migrate"
 
-    echo "=== DEPLOY CONCLUIDO COM SUCESSO ==="
+    echo "DEPLOY CONCLUIDO COM SUCESSO"
   EOT
 }
 
