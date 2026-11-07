@@ -62,6 +62,9 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base,
     check_origin: false
+  
+  config :kgkm, Kgkm.Mailer,
+    adapter: Swoosh.Adapters.Logger
 
   # ## SSL Support
   #
