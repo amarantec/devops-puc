@@ -13,16 +13,16 @@ provider "aws" {
   region = "sa-east-1"
 }
 
-# Busca a ultima ami do ubuntu 24.04
+# busca a ultima ami do ubuntu 24.04
 data "aws_ami" "ubuntu" {
   most_recent = true
 
   filter {
-    name = "name"
+    name   = "name"
     values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"]
   }
 
-  owners = ["099720109477"] # ID oficial da canonical
+  owners = ["099720109477"] # Canonical
 }
 
 # recupera o vpc padrão para evitar dependencias manuais da rede
@@ -33,8 +33,8 @@ data "aws_vpc" "default" {
 # Security Group, definindo as regras do firewall para o app, db e ssh
 resource "aws_security_group" "kgkm_sg" {
   name        = "kgkm-chat-prod-sg"
-  description = "permite trafego web, conexoes websocket e ssh para a aplicacao"
-  vpc_id =  data.aws_vpc.default.id
+  description = "Permite trafego web, conexoes websocket e ssh para a aplicacao"
+  vpc_id      = data.aws_vpc.default.id
 
   ingress {
     description = "HTTP padrao"
@@ -68,10 +68,10 @@ resource "aws_security_group" "kgkm_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  egress  {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -80,9 +80,9 @@ resource "aws_security_group" "kgkm_sg" {
   }
 }
 
-# Adiciona a chave publica ssh local para liberar o acesso a instancia ec2
+# adiciona a chave publica ssh local para liberar o acesso a instancia ec2
 resource "aws_key_pair" "deployer" {
-  key_name = "kgkm-deploy-key"
+  key_name   = "kgkm-deploy-key"
   public_key = file("~/.ssh/kgkm_aws_key.pub")
 }
 
@@ -97,7 +97,7 @@ locals {
     apt-get update -y
     apt-get install -y docker.io wget gnupg
 
-    # inicia o serivo docker
+    # inicia o servico docker
     systemctl start docker
     systemctl enable docker
     usermod -aG docker ubuntu
@@ -121,7 +121,7 @@ locals {
     EOF
     chown -R ubuntu:ubuntu /home/ubuntu/app
 
-   echo "criando um db postgres com o docker"
+    echo "criando um db postgres com o docker"
     docker run -d --name kgkm-db \
       --restart always \
       -p 5432:5432 \
@@ -132,6 +132,7 @@ locals {
       postgres:18
 
     echo "baixa e executa a imagem do app que foi gerada no CI no github"
+    # Se o pacote no GHCR for público, o pull funciona direto sem login
     docker pull ghcr.io/amarantec/devops-puc:latest
 
     docker run -d --name kgkm-app \
@@ -145,7 +146,7 @@ locals {
     sleep 15
     docker exec kgkm-app /app/bin/kgkm eval "Kgkm.Release.migrate"
 
-    echo "deploy concluido com sucesso"
+    echo "=== DEPLOY CONCLUIDO COM SUCESSO ==="
   EOT
 }
 
