@@ -148,9 +148,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+      - name: Lowercase repository name
+        id: string_case
+        uses: ASzc/change-string-case-action@v6
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.CR_PAT }}
+          string: ${{ github.repository }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ steps.string_case.outputs.lowercase }}:latest
+            ghcr.io/${{ steps.string_case.outputs.lowercase }}:${{ github.sha }}
